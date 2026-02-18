@@ -1,0 +1,4 @@
+[INFO] device=cuda
+[WARN] overlap between TV and TEST: 2 shots; dropping from TV
+[INFO] n_features=11 keys=['Bt', 'ip', 'ne_nG', 'n=1 amplitude', 'Mir_avg_amp', 'Mir_avg_fre', 'v_loop', 'dx_a', 'dy_a', 'sxr_mean', 'xuv_ratio']
+[INFO] loaded disruptive 100/402 (ok=100 fail=0) elapsed=67.6s

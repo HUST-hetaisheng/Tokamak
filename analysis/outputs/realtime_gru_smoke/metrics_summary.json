@@ -1,0 +1,70 @@
+{
+  "best_epoch": 1,
+  "best_monitor_score": 0.9451043869175193,
+  "val_point_metrics": {
+    "accuracy": 0.9831483395497236,
+    "precision": 0.16294642857142858,
+    "recall": 1.0,
+    "f1": 0.2802303262955854,
+    "roc_auc": 0.9996424027570192,
+    "pr_auc": 0.9451043869175193
+  },
+  "val_shot_metrics": {
+    "disruptive_shot_recall": 1.0,
+    "non_disruptive_false_alarm_rate": 0.0,
+    "n_disruptive_shots": 2.0,
+    "n_non_disruptive_shots": 4.0,
+    "mean_lead_time_ms": 632.377100637955,
+    "median_lead_time_ms": 632.377100637955
+  },
+  "test_point_metrics": {
+    "accuracy": 0.9852463432800342,
+    "precision": 0.2235597592433362,
+    "recall": 0.9027777777777778,
+    "f1": 0.35837353549276363,
+    "roc_auc": 0.9874780274085277,
+    "pr_auc": 0.462809437321618
+  },
+  "test_shot_metrics": {
+    "disruptive_shot_recall": 0.8,
+    "non_disruptive_false_alarm_rate": 0.0,
+    "n_disruptive_shots": 5.0,
+    "n_non_disruptive_shots": 10.0,
+    "mean_lead_time_ms": 337.2938344961082,
+    "median_lead_time_ms": 218.2300751895454
+  },
+  "tv_load_stats": {
+    "requested_disruptive": 10,
+    "requested_non_disruptive": 20,
+    "loaded_disruptive": 10,
+    "loaded_non_disruptive": 20,
+    "failed": 0
+  },
+  "test_load_stats": {
+    "requested_disruptive": 5,
+    "requested_non_disruptive": 10,
+    "loaded_disruptive": 5,
+    "loaded_non_disruptive": 10,
+    "failed": 0
+  },
+  "n_train_shots": 24,
+  "n_val_shots": 6,
+  "n_test_shots": 15,
+  "feature_keys": [
+    "Bt",
+    "ip",
+    "ne_nG",
+    "n=1 amplitude",
+    "Mir_avg_amp",
+    "Mir_avg_fre",
+    "v_loop",
+    "dx_a",
+    "dy_a",
+    "sxr_mean",
+    "xuv_ratio"
+  ],
+  "trigger_prob": 0.5,
+  "trigger_consecutive": 20,
+  "uncertain_ms": 30.0,
+  "overlap_removed_from_tv": []
+}

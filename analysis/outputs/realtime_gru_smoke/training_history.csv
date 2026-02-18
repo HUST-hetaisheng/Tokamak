@@ -1,0 +1,2 @@
+epoch,train_loss,val_accuracy,val_precision,val_recall,val_f1,val_roc_auc,val_pr_auc,val_shot_recall,val_false_alarm_rate
+1.0,1.3151045004441964,0.9831483395497236,0.16294642857142858,1.0,0.2802303262955854,0.9996424027570192,0.9451043869175193,1.0,0.0

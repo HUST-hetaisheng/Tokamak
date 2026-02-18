@@ -1,0 +1,15 @@
+[INFO] subsample tv_disrupt: 402 -> 250
+[INFO] subsample tv_non_disrupt: 1287 -> 300
+[INFO] subsample test_disrupt: 175 -> 120
+[INFO] subsample test_non_disrupt: 550 -> 150
+=== Split Summary ===
+TV disruptive: 250
+TV non-disruptive: 300
+Train shots: 440
+Val shots:   110
+TEST shots:  270 (original split)
+
+=== Loading TV Sequences ===
+[INFO] loading disruptive 50/250 (ok=50 fail=0) elapsed=1.2s
+[INFO] loading disruptive 100/250 (ok=100 fail=0) elapsed=2.5s
+[INFO] loading disruptive 150/250 (ok=150 fail=0) elapsed=3.7s

@@ -1,0 +1,31 @@
+{
+  "subset_info": {
+    "test_disruptive": 20,
+    "test_non_disruptive": 20,
+    "loaded": 40
+  },
+  "load_stats": {
+    "requested_disruptive": 20,
+    "requested_non_disruptive": 20,
+    "loaded_disruptive": 20,
+    "loaded_non_disruptive": 20,
+    "failed": 0
+  },
+  "point_metrics": {
+    "accuracy": 0.9404437384709982,
+    "precision": 0.055240443896424164,
+    "recall": 0.8379052369077307,
+    "f1": 0.10364772113827408,
+    "roc_auc": 0.9189509312057224,
+    "pr_auc": 0.5683778287497315
+  },
+  "shot_metrics": {
+    "disruptive_shot_recall": 0.85,
+    "non_disruptive_false_alarm_rate": 0.2,
+    "n_disruptive_shots": 20.0,
+    "n_non_disruptive_shots": 20.0,
+    "mean_lead_time_ms": 929.2100953954478,
+    "median_lead_time_ms": 118.52117384843908
+  },
+  "checkpoint": "analysis\\outputs\\realtime_gru_run7\\best_model.pt"
+}
