@@ -9,12 +9,15 @@
 ## Project Goal And Scope
 - The primary goal of this repository is to build an innovative and feasible real-time tokamak plasma disruption prediction system.
 - The system should output real-time disruption probability, disruption type classification, and early warning signals.
+- The disruption vs non-disruption classification accuracy target is at least 95%.
+- The key priority is visualization of the disruption process and reliable real-time disruption probability output.
 - The research direction should support cross-device transfer learning in later stages (for example from EAST to J-TEXT datasets).
 - `D:\Fuison\analysis\paper_131.txt` is a core prior-knowledge source and industry research reference for this project.
 - Project modeling, feature design, and evaluation strategy should be grounded in this paper unless the user explicitly requests a different direction.
 - `1.ipynb`, `2.ipynb`, and `3.ipynb` are from a different lithium battery remaining useful life project and are out of scope for tokamak disruption modeling tasks in this repository.
 - `output/` is reserved for generated output artifacts.
-# Repository Guidelines
+
+<!-- # Repository Guidelines
 
 ## Project Structure & Module Organization
 - `analysis/train_east_realtime_sequence.py` is the main entry point for model training and streaming inference (`train` and `predict` modes).
@@ -41,14 +44,10 @@
 ## Testing Guidelines
 - No formal `pytest` suite exists yet; use reproducible smoke runs as baseline validation.
 - A change is minimally validated when training completes and regenerates `metrics_summary.json` and `sequence_predictions/test/_summary.csv`.
-- If adding unit tests, place them in `tests/` and use `test_*.py` filenames.
+- If adding unit tests, place them in `tests/` and use `test_*.py` filenames. -->
 
 ## Commit & Pull Request Guidelines
 - This workspace snapshot has no accessible `.git` metadata; use Conventional Commit prefixes (`feat:`, `fix:`, `refactor:`).
 - PRs should include purpose, exact command(s), key hyperparameters, and before/after metrics.
 - Avoid committing large generated artifacts or raw HDF5 data (`analysis/outputs/**`, `data/EAST/unified_hdf5/**`) unless explicitly required.
-
-## Iteration Memory Rule
-- After every major project iteration, append exactly one sentence to `MAJOR_ITERATIONS.md`.
-- Use this format for each new line in `## Entries`: `YYYY-MM-DD: <one-sentence summary>.`
 
