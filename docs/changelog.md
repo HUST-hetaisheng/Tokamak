@@ -2,6 +2,31 @@
 
 This log tracks repo milestones by implementation stage (commit-aligned when commits are available).
 
+## 2026-02-19 - Stage R3 - Threshold policy hardening + calibration split isolation
+
+### Updated
+- `src/models/eval.py`
+  - Added shot-level threshold search: `choose_threshold_by_shot_fpr(...)`.
+- `src/models/train.py`
+  - Added `--threshold-objective shot_fpr_constrained`.
+  - Added `--threshold-max-shot-fpr` (default `0.02`).
+  - Added `--calibration-shot-fraction` (default `0.5`) and split validation shots into:
+    - calibration subset (fit calibrator),
+    - threshold subset (select threshold / report validation metrics).
+  - Persisted split metadata in `training_config.json` and `metrics_summary.json`.
+
+### Added
+- New iteration runs (policy-constrained):
+  - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/*`
+  - `artifacts/models/iters/sfpr001_d4_e260_lr004_s3_reason/*`
+- Per-shot reason files for the above runs:
+  - `disruption_reason_per_shot.csv` (one row per disruptive TEST shot, with top-k evidence).
+
+### Current Recommended Run
+- `sfpr002_d4_e260_lr004_s3_reason`
+- Key metrics (TEST): `accuracy=0.990885`, `roc_auc=0.978437`, `shot_accuracy=0.953757`, `shot_tpr=0.842105`, `shot_fpr=0.014815`
+- Reason coverage: `38/38` disruptive test shots with reason rows.
+
 ## 2026-02-19 - Stage R2 - J-TEXT parameter sweep + per-shot disruption reasons
 
 ### Added

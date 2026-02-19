@@ -110,6 +110,19 @@ Checks Passed:
 - [INFO] Calibration is applied after model training and fitted on validation only (no direct test-fit leakage detected).
 - [INFO] Test set remains evaluation-only for final reported metrics in this run.
 
+## 2026-02-19 Follow-up: Threshold/Calibration Remediation Applied
+
+Scope:
+- Reviewed implementation updates in:
+  - `src/models/eval.py` (`choose_threshold_by_shot_fpr`)
+  - `src/models/train.py` (validation split into calibration/threshold subsets)
+  - New run artifacts under `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/`
+
+Findings:
+- [INFO] Prior calibration-overfit risk is reduced: calibrator fit and threshold selection now use disjoint validation-shot subsets.
+- [INFO] Threshold search now supports shot-level FAR-constrained policy (`threshold_objective=shot_fpr_constrained`, `max_shot_fpr` configurable).
+- [MEDIUM] Still recommended: add a dedicated temporal/session-based split option for threshold subset robustness under campaign drift.
+
 ## 2026-02-19 Review Cycle: Agent-3 Relaunch Delta (Threshold/Leakage/Calibration/Plotting)
 
 Scope:

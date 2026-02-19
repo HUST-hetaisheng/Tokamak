@@ -55,27 +55,27 @@ Artifacts:
 Status: completed
 Done:
 - Added train CLI plotting controls `--plot-shot-limit` and `--plot-all-test-shots` to resolve limited timeline exports.
-- Added validation threshold objective selection via `--threshold-objective {youden,accuracy}`.
-- Ran continuation sweep on full split sizes (train=1386, val=174, test=173), total 5 runs under `artifacts/models/iters/` and `reports/iters/`.
-- Kept 23-feature use-all-by-default policy (23/23) in all runs.
-- Added per-disruptive-shot reason export (`disruption_reason_per_shot.csv`) using model contribution decomposition + mechanism mapping.
-- Recommended run: `acc_d4_e260_lr004_ss085_cs09_s3_reason`.
-- Recommended run metrics: accuracy=0.991008, roc_auc=0.978493, shot_accuracy=0.953757, shot_tpr=0.842105, shot_fpr=0.014815.
-- Recommended run reason coverage: 38/38 disruptive test shots have reason rows.
+- Added validation threshold objective selection via `--threshold-objective {youden,accuracy,shot_fpr_constrained}`.
+- Ran continuation training on full split sizes (train=1386, val=174, test=173); validation was split into calibration=87 and threshold=87 shots.
+- Kept 23-feature use-all-by-default policy (23/23) and persisted it in `training_config.json`.
+- Produced `0` probability timeline PNG files for test shots.
+- Produced `38` per-disruptive-shot reason rows (expected disruptive shots in TEST: 38).
+- Parameter sweep total: 7 runs; current recommended run is `sfpr002_d4_e260_lr004_s3_reason`.
+- Current recommended metrics: accuracy=0.990885, roc_auc=0.978437, shot_accuracy=0.953757, shot_tpr=0.842105, shot_fpr=0.014815.
+- Reason coverage in recommended run: 38/38 disruptive TEST shots.
 Next:
-- Coordinate with reviewer on calibration holdout split and shot-level FAR-constrained threshold selection.
-- Iterate around the recommended run to improve lead-time while keeping `shot_fpr <= 0.02`.
+- Coordinate with reviewer on threshold objective trade-offs and calibration holdout strategy.
 Blockers:
 - None.
 Artifacts:
 - `src/models/train.py`
 - `src/models/eval.py`
 - `src/models/calibrate.py`
-- `artifacts/models/iters/acc_d4_e260_lr004_ss085_cs09_s3_reason/metrics_summary.json`
-- `artifacts/models/iters/acc_d4_e260_lr004_ss085_cs09_s3_reason/training_config.json`
-- `artifacts/models/iters/acc_d4_e260_lr004_ss085_cs09_s3_reason/warning_summary_test.csv`
-- `artifacts/models/iters/acc_d4_e260_lr004_ss085_cs09_s3_reason/disruption_reason_per_shot.csv`
-- `reports/iters/acc_d4_e260_lr004_ss085_cs09_s3_reason/metrics.md`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/training_config.json`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/metrics_summary.json`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/warning_summary_test.csv`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_per_shot.csv`
+- `reports/iters/sfpr002_d4_e260_lr004_s3_reason/metrics.md`
 - `reports/iters/summary.md`
 ## Agent-4 (Reviewer / Maintainer)
 Status: in_progress

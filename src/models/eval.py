@@ -118,6 +118,113 @@ def choose_threshold_by_accuracy(
     return best_thr, best_metrics
 
 
+def choose_threshold_by_shot_fpr(
+    timeline_df: pd.DataFrame,
+    sustain_ms: float,
+    max_shot_fpr: float = 0.02,
+    min_threshold: float = 0.01,
+    max_threshold: float = 0.99,
+    num_steps: int = 300,
+) -> Tuple[float, Dict[str, float]]:
+    if timeline_df.empty:
+        raise ValueError("timeline_df is empty")
+
+    eps = 1e-12
+    best_feasible_thr: float | None = None
+    best_feasible: Dict[str, float] | None = None
+    best_fallback_thr: float | None = None
+    best_fallback: Dict[str, float] | None = None
+    feasible_count = 0
+
+    for thr in np.linspace(min_threshold, max_threshold, num_steps):
+        summary = apply_shot_warning_policy(timeline_df=timeline_df, threshold=float(thr), sustain_ms=float(sustain_ms))
+        sm = compute_shot_level_metrics(summary)
+        shot_tpr = float(sm.get("shot_tpr", float("nan")))
+        shot_fpr = float(sm.get("shot_fpr", float("nan")))
+        shot_acc = float(sm.get("shot_accuracy", float("nan")))
+        lead = float(sm.get("lead_time_ms_median", float("nan")))
+        if not np.isfinite(shot_tpr):
+            shot_tpr = 0.0
+        if not np.isfinite(shot_fpr):
+            shot_fpr = 1.0
+        if not np.isfinite(shot_acc):
+            shot_acc = 0.0
+        if not np.isfinite(lead):
+            lead = -1e12
+
+        cur = {
+            "shot_tpr": shot_tpr,
+            "shot_fpr": shot_fpr,
+            "shot_accuracy": shot_acc,
+            "lead_time_ms_median": lead,
+        }
+
+        # Fallback ranking: lower FPR -> higher TPR -> higher shot accuracy.
+        if best_fallback is None:
+            best_fallback = cur
+            best_fallback_thr = float(thr)
+        else:
+            better_fallback = False
+            if cur["shot_fpr"] < best_fallback["shot_fpr"] - eps:
+                better_fallback = True
+            elif abs(cur["shot_fpr"] - best_fallback["shot_fpr"]) <= eps and cur["shot_tpr"] > best_fallback["shot_tpr"] + eps:
+                better_fallback = True
+            elif (
+                abs(cur["shot_fpr"] - best_fallback["shot_fpr"]) <= eps
+                and abs(cur["shot_tpr"] - best_fallback["shot_tpr"]) <= eps
+                and cur["shot_accuracy"] > best_fallback["shot_accuracy"] + eps
+            ):
+                better_fallback = True
+            if better_fallback:
+                best_fallback = cur
+                best_fallback_thr = float(thr)
+
+        if shot_fpr <= float(max_shot_fpr) + eps:
+            feasible_count += 1
+            if best_feasible is None:
+                best_feasible = cur
+                best_feasible_thr = float(thr)
+            else:
+                # Feasible ranking: higher TPR -> higher median lead-time -> higher shot accuracy -> lower FPR.
+                better_feasible = False
+                if cur["shot_tpr"] > best_feasible["shot_tpr"] + eps:
+                    better_feasible = True
+                elif abs(cur["shot_tpr"] - best_feasible["shot_tpr"]) <= eps and cur["lead_time_ms_median"] > best_feasible["lead_time_ms_median"] + eps:
+                    better_feasible = True
+                elif (
+                    abs(cur["shot_tpr"] - best_feasible["shot_tpr"]) <= eps
+                    and abs(cur["lead_time_ms_median"] - best_feasible["lead_time_ms_median"]) <= eps
+                    and cur["shot_accuracy"] > best_feasible["shot_accuracy"] + eps
+                ):
+                    better_feasible = True
+                elif (
+                    abs(cur["shot_tpr"] - best_feasible["shot_tpr"]) <= eps
+                    and abs(cur["lead_time_ms_median"] - best_feasible["lead_time_ms_median"]) <= eps
+                    and abs(cur["shot_accuracy"] - best_feasible["shot_accuracy"]) <= eps
+                    and cur["shot_fpr"] < best_feasible["shot_fpr"] - eps
+                ):
+                    better_feasible = True
+                if better_feasible:
+                    best_feasible = cur
+                    best_feasible_thr = float(thr)
+
+    if best_feasible is not None and best_feasible_thr is not None:
+        out = dict(best_feasible)
+        out["max_shot_fpr"] = float(max_shot_fpr)
+        out["feasible_found"] = 1.0
+        out["feasible_threshold_count"] = float(feasible_count)
+        return float(best_feasible_thr), out
+
+    if best_fallback is None or best_fallback_thr is None:
+        raise RuntimeError("Failed to choose threshold by shot-FPR policy")
+
+    out = dict(best_fallback)
+    out["max_shot_fpr"] = float(max_shot_fpr)
+    out["feasible_found"] = 0.0
+    out["feasible_threshold_count"] = float(feasible_count)
+    return float(best_fallback_thr), out
+
+
 def sustained_warning_decision(
     probs: np.ndarray,
     time_ms: np.ndarray,

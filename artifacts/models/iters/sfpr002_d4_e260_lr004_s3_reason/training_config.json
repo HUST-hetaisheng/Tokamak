@@ -1,0 +1,108 @@
+{
+  "generated_at_utc": "2026-02-19T14:12:11.457344+00:00",
+  "data_root": "G:\\\u6211\u7684\u4e91\u7aef\u786c\u76d8\\Fuison\\data",
+  "hdf5_root": "G:\\\u6211\u7684\u4e91\u7aef\u786c\u76d8\\Fuison\\data\\J-TEXT\\unified_hdf5",
+  "feature_count": 23,
+  "features": [
+    "Bt",
+    "CIII",
+    "MNM",
+    "Mir_VV",
+    "Mir_avg_amp",
+    "Mir_avg_fre",
+    "Z_proxy",
+    "dx_a",
+    "dy_a",
+    "ip",
+    "mode_number_n",
+    "n=1 amplitude",
+    "ne_nG",
+    "qa_proxy",
+    "sxr_kurt",
+    "sxr_mean",
+    "sxr_skew",
+    "sxr_var",
+    "v_loop",
+    "xuv_kurt",
+    "xuv_ratio",
+    "xuv_skew",
+    "xuv_var"
+  ],
+  "feature_drop_reason": [],
+  "feature_policy": {
+    "mode": "use_all_required_features",
+    "use_all_by_default": true,
+    "expected_feature_count": 23,
+    "selected_feature_count": 23
+  },
+  "shot_counts": {
+    "train": 1386,
+    "val_total": 174,
+    "val_calibration": 87,
+    "val_threshold": 87,
+    "test": 173
+  },
+  "point_counts": {
+    "train_raw": 474461,
+    "train_used": 465493,
+    "val_calibration_raw": 29854,
+    "val_calibration_used": 29284,
+    "val_threshold_raw": 29899,
+    "val_threshold_used": 29347,
+    "test_raw": 57961,
+    "test_used": 56830
+  },
+  "missing_shots": {
+    "train": [],
+    "val_calibration": [],
+    "val_threshold": [],
+    "test": []
+  },
+  "labeling": {
+    "gray_ms": 30.0,
+    "fallback_fls_ms": 25.0,
+    "fallback_dt_ms": 1.0
+  },
+  "class_imbalance": {
+    "train_pos_points": 5759,
+    "train_neg_points": 459734,
+    "scale_pos_weight": 79.82878972043757
+  },
+  "selected_model": "xgb_dart",
+  "calibration": "isotonic",
+  "threshold_policy": {
+    "objective": "shot_fpr_constrained",
+    "max_shot_fpr": 0.02,
+    "theta": 0.6687959866220735,
+    "sustain_ms": 3.0,
+    "selection_diag": {
+      "shot_tpr": 0.7368421052631579,
+      "shot_fpr": 0.014705882352941176,
+      "shot_accuracy": 0.9310344827586207,
+      "lead_time_ms_median": 11.097784601614961,
+      "max_shot_fpr": 0.02,
+      "feasible_found": 1.0,
+      "feasible_threshold_count": 99.0,
+      "objective": "shot_fpr_constrained"
+    }
+  },
+  "calibration_split": {
+    "calibration_shot_fraction": 0.5,
+    "val_total_shots": 174,
+    "val_calibration_shots": 87,
+    "val_threshold_shots": 87
+  },
+  "plotting": {
+    "plot_all_test_shots": false,
+    "plot_shot_limit": 0,
+    "test_shot_count": 173,
+    "generated_timeline_png": 0
+  },
+  "xgb_params": {
+    "n_estimators": 260,
+    "learning_rate": 0.04,
+    "max_depth": 4,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9
+  }
+}

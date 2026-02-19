@@ -85,6 +85,31 @@ python -m src.models.train `
   --threshold-objective accuracy
 ```
 
+### 2c) Recommended policy run (shot-level FAR constrained + per-shot reasons)
+
+This run separates validation shots into calibration/threshold subsets, then selects threshold under shot-level FAR constraint.
+
+```powershell
+python -m src.models.train `
+  --repo-root . `
+  --max-train-shots 0 `
+  --max-val-shots 0 `
+  --max-test-shots 0 `
+  --plot-shot-limit 0 `
+  --threshold-objective shot_fpr_constrained `
+  --threshold-max-shot-fpr 0.02 `
+  --calibration-shot-fraction 0.5 `
+  --sustain-ms 3 `
+  --xgb-estimators 260 `
+  --xgb-learning-rate 0.04 `
+  --xgb-max-depth 4 `
+  --xgb-subsample 0.85 `
+  --xgb-colsample-bytree 0.9 `
+  --reason-top-k 3 `
+  --output-dir artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason `
+  --report-dir reports/iters/sfpr002_d4_e260_lr004_s3_reason
+```
+
 ### 3) Streaming prediction on custom matrix
 
 ```powershell

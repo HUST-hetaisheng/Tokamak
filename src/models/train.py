@@ -35,6 +35,7 @@ from src.models.calibrate import ProbabilityCalibrator, calibration_quality_delt
 from src.models.eval import (
     apply_shot_warning_policy,
     choose_threshold_by_accuracy,
+    choose_threshold_by_shot_fpr,
     choose_threshold_by_youden,
     compute_binary_metrics,
     compute_shot_level_metrics,
@@ -89,7 +90,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--xgb-colsample-bytree", type=float, default=0.8)
     parser.add_argument("--n-jobs", type=int, default=4)
     parser.add_argument("--calibration-method", choices=["isotonic", "sigmoid"], default="isotonic")
-    parser.add_argument("--threshold-objective", choices=["youden", "accuracy"], default="youden")
+    parser.add_argument(
+        "--threshold-objective",
+        choices=["youden", "accuracy", "shot_fpr_constrained"],
+        default="shot_fpr_constrained",
+    )
+    parser.add_argument("--threshold-max-shot-fpr", type=float, default=0.02)
+    parser.add_argument("--calibration-shot-fraction", type=float, default=0.5)
     parser.add_argument("--sustain-ms", type=float, default=5.0)
     parser.add_argument("--plot-shot-limit", type=int, default=3)
     parser.add_argument("--plot-all-test-shots", action="store_true")
@@ -124,6 +131,48 @@ def take_bounded(ids: Sequence[int], max_count: int, seed: int) -> List[int]:
     rng = random.Random(seed)
     rng.shuffle(arr)
     return sorted(arr[:max_count])
+
+
+def split_val_for_calibration_and_threshold(
+    shot_ids: Sequence[int],
+    label_map: Mapping[int, int],
+    calibration_fraction: float,
+    seed: int,
+) -> Tuple[List[int], List[int]]:
+    ids = [int(s) for s in shot_ids]
+    frac = float(np.clip(calibration_fraction, 0.1, 0.9))
+    rng = random.Random(seed + 1009)
+
+    pos = [sid for sid in ids if int(label_map.get(sid, 0)) == 1]
+    neg = [sid for sid in ids if int(label_map.get(sid, 0)) == 0]
+    rng.shuffle(pos)
+    rng.shuffle(neg)
+
+    def _split_group(arr: List[int]) -> Tuple[List[int], List[int]]:
+        if not arr:
+            return [], []
+        k = int(round(len(arr) * frac))
+        if len(arr) >= 2:
+            k = max(1, min(len(arr) - 1, k))
+        else:
+            k = 1
+        return arr[:k], arr[k:]
+
+    pos_cal, pos_thr = _split_group(pos)
+    neg_cal, neg_thr = _split_group(neg)
+
+    calib = sorted(pos_cal + neg_cal)
+    thresh = sorted(pos_thr + neg_thr)
+
+    if not thresh:
+        # Extreme fallback: keep at least one shot for threshold subset.
+        if calib:
+            thresh = [calib.pop()]
+    if not calib:
+        if thresh:
+            calib = [thresh.pop()]
+
+    return calib, thresh
 
 
 def read_advanced_map(path: Path) -> Dict[int, float]:
@@ -554,6 +603,7 @@ def write_markdown_report(path: Path, metrics: Dict[str, Any]) -> None:
     plotting = metrics.get("plotting", {})
     file_counts = metrics.get("artifact_file_counts", {})
     reason_summary = metrics.get("reason_summary", {})
+    calibration_split = metrics.get("calibration_split", {})
 
     lines = [
         "# Agent-3 Metrics Summary",
@@ -587,8 +637,17 @@ def write_markdown_report(path: Path, metrics: Dict[str, Any]) -> None:
         "## Threshold Policy",
         "",
         f"- objective: `{threshold_policy.get('objective', 'youden')}`",
+        f"- max_shot_fpr: `{float(threshold_policy.get('max_shot_fpr', 0.0)):.4f}`",
         f"- theta: `{threshold_policy['theta']:.6f}`",
         f"- sustain: `{threshold_policy['sustain_ms']:.3f} ms`",
+        "",
+        "## Calibration / Threshold Split",
+        "",
+        "| Metric | Value |",
+        "|---|---:|",
+        f"| val_total_shots | {int(calibration_split.get('val_total_shots', 0))} |",
+        f"| val_calibration_shots | {int(calibration_split.get('val_calibration_shots', 0))} |",
+        f"| val_threshold_shots | {int(calibration_split.get('val_threshold_shots', 0))} |",
         "",
         "## Generated File Counts",
         "",
@@ -666,15 +725,17 @@ def update_progress(progress_path: Path, metrics: Dict[str, Any], artifacts: Lis
     expected_feature_count = int(feature_policy.get("expected_feature_count", 0))
     selected_feature_count = int(feature_policy.get("selected_feature_count", 0))
     train_shots = int(split_counts.get("train", 0))
-    val_shots = int(split_counts.get("val", 0))
+    val_shots = int(split_counts.get("val_total", split_counts.get("val", 0)))
+    val_calib_shots = int(split_counts.get("val_calibration", 0))
+    val_thresh_shots = int(split_counts.get("val_threshold", 0))
     test_shots = int(split_counts.get("test", 0))
     lines = [
         marker,
         "Status: completed",
         "Done:",
         "- Added train CLI plotting controls `--plot-shot-limit` and `--plot-all-test-shots` to resolve limited timeline exports.",
-        "- Added validation threshold objective selection via `--threshold-objective {youden,accuracy}`.",
-        f"- Ran continuation training on full split sizes (train={train_shots}, val={val_shots}, test={test_shots}).",
+        "- Added validation threshold objective selection via `--threshold-objective {youden,accuracy,shot_fpr_constrained}`.",
+        f"- Ran continuation training on full split sizes (train={train_shots}, val={val_shots}, test={test_shots}); validation was split into calibration={val_calib_shots} and threshold={val_thresh_shots} shots.",
         f"- Kept 23-feature use-all-by-default policy ({selected_feature_count}/{expected_feature_count}) and persisted it in `training_config.json`.",
         f"- Produced `{timeline_png_count}` probability timeline PNG files for test shots.",
         f"- Produced `{reason_rows}` per-disruptive-shot reason rows (expected disruptive shots in TEST: {disruptive_shots_test}).",
@@ -740,6 +801,12 @@ def main() -> None:
     split_test = take_bounded(read_split_ids((repo_root / args.split_dir / "test.txt").resolve()), args.max_test_shots, args.seed)
 
     label_map = load_label_map((repo_root / args.dataset_artifact_dir / "clean_shots.csv").resolve())
+    split_val_calib, split_val_thresh = split_val_for_calibration_and_threshold(
+        shot_ids=split_val,
+        label_map=label_map,
+        calibration_fraction=float(args.calibration_shot_fraction),
+        seed=int(args.seed),
+    )
     advanced_map = read_advanced_map((repo_root / "shot_list/J-TEXT/AdvancedTime_J-TEXT.json").resolve())
     hdf5_idx = build_hdf5_index(hdf5_root)
 
@@ -755,9 +822,21 @@ def main() -> None:
         fallback_dt_ms=args.fallback_dt_ms,
         reconcile_len_tol=args.reconcile_len_tol,
     )
-    val = load_split(
-        split_name="val",
-        shot_ids=split_val,
+    val_calib = load_split(
+        split_name="val_calib",
+        shot_ids=split_val_calib,
+        hdf5_idx=hdf5_idx,
+        features=features,
+        label_map=label_map,
+        advanced_map=advanced_map,
+        gray_ms=args.gray_ms,
+        fallback_fls_ms=args.fallback_fls_ms,
+        fallback_dt_ms=args.fallback_dt_ms,
+        reconcile_len_tol=args.reconcile_len_tol,
+    )
+    val_thresh = load_split(
+        split_name="val_threshold",
+        shot_ids=split_val_thresh,
         hdf5_idx=hdf5_idx,
         features=features,
         label_map=label_map,
@@ -786,23 +865,24 @@ def main() -> None:
 
     # Baseline 1: Logistic Regression
     lr_scaler, lr_model = train_logreg(train.x, train.y, seed=args.seed)
-    lr_val_prob = lr_model.predict_proba(lr_scaler.transform(val.x))[:, 1]
+    lr_val_prob = lr_model.predict_proba(lr_scaler.transform(val_thresh.x))[:, 1]
     lr_test_prob = lr_model.predict_proba(lr_scaler.transform(test.x))[:, 1]
 
     # Baseline 2: XGBoost gbtree
     gbt_model = train_xgb(train.x, train.y, booster="gbtree", scale_pos_weight=scale_pos_weight, args=args)
-    gbt_val_prob = gbt_model.predict_proba(val.x)[:, 1]
+    gbt_val_prob = gbt_model.predict_proba(val_thresh.x)[:, 1]
     gbt_test_prob = gbt_model.predict_proba(test.x)[:, 1]
 
     # Primary baseline: XGBoost DART
     dart_model = train_xgb(train.x, train.y, booster="dart", scale_pos_weight=scale_pos_weight, args=args)
-    dart_val_prob = dart_model.predict_proba(val.x)[:, 1]
+    dart_val_calib_prob = dart_model.predict_proba(val_calib.x)[:, 1]
+    dart_val_prob = dart_model.predict_proba(val_thresh.x)[:, 1]
     dart_test_prob = dart_model.predict_proba(test.x)[:, 1]
 
     baselines_val_raw = {
-        "logreg": metrics_from_prob(val.y, lr_val_prob, 0.5),
-        "xgb_gbtree": metrics_from_prob(val.y, gbt_val_prob, 0.5),
-        "xgb_dart": metrics_from_prob(val.y, dart_val_prob, 0.5),
+        "logreg": metrics_from_prob(val_thresh.y, lr_val_prob, 0.5),
+        "xgb_gbtree": metrics_from_prob(val_thresh.y, gbt_val_prob, 0.5),
+        "xgb_dart": metrics_from_prob(val_thresh.y, dart_val_prob, 0.5),
     }
     baselines_test_raw = {
         "logreg": metrics_from_prob(test.y, lr_test_prob, 0.5),
@@ -810,24 +890,31 @@ def main() -> None:
         "xgb_dart": metrics_from_prob(test.y, dart_test_prob, 0.5),
     }
 
-    calibrator = ProbabilityCalibrator(method=args.calibration_method).fit(val.y, dart_val_prob)
+    calibrator = ProbabilityCalibrator(method=args.calibration_method).fit(val_calib.y, dart_val_calib_prob)
     val_prob_cal = calibrator.predict(dart_val_prob)
     test_prob_cal = calibrator.predict(dart_test_prob)
-    cal_delta = calibration_quality_delta(val.y, dart_val_prob, val_prob_cal)
+    cal_delta = calibration_quality_delta(val_thresh.y, dart_val_prob, val_prob_cal)
 
-    if args.threshold_objective == "accuracy":
-        theta, theta_diag = choose_threshold_by_accuracy(val.y, val_prob_cal)
-    else:
-        theta, theta_diag = choose_threshold_by_youden(val.y, val_prob_cal)
-    theta_diag = dict(theta_diag)
-    theta_diag["objective"] = args.threshold_objective
-    val_metrics_cal = metrics_from_prob(val.y, val_prob_cal, theta)
-    test_metrics_cal = metrics_from_prob(test.y, test_prob_cal, theta)
-
-    val_timeline = val.timeline.copy()
-    test_timeline = test.timeline.copy()
+    val_timeline = val_thresh.timeline.copy()
     val_timeline["prob_raw"] = dart_val_prob
     val_timeline["prob_cal"] = val_prob_cal
+
+    if args.threshold_objective == "accuracy":
+        theta, theta_diag = choose_threshold_by_accuracy(val_thresh.y, val_prob_cal)
+    elif args.threshold_objective == "shot_fpr_constrained":
+        theta, theta_diag = choose_threshold_by_shot_fpr(
+            timeline_df=val_timeline,
+            sustain_ms=float(args.sustain_ms),
+            max_shot_fpr=float(args.threshold_max_shot_fpr),
+        )
+    else:
+        theta, theta_diag = choose_threshold_by_youden(val_thresh.y, val_prob_cal)
+    theta_diag = dict(theta_diag)
+    theta_diag["objective"] = args.threshold_objective
+    val_metrics_cal = metrics_from_prob(val_thresh.y, val_prob_cal, theta)
+    test_metrics_cal = metrics_from_prob(test.y, test_prob_cal, theta)
+
+    test_timeline = test.timeline.copy()
     test_timeline["prob_raw"] = dart_test_prob
     test_timeline["prob_cal"] = test_prob_cal
 
@@ -892,7 +979,7 @@ def main() -> None:
         try:
             shap_topk = compute_shap_topk(
                 model=dart_model,
-                x_ref=val.x,
+                x_ref=val_thresh.x,
                 features=features,
                 max_samples=int(args.max_shap_samples),
                 top_k=int(args.top_k_shap),
@@ -903,7 +990,7 @@ def main() -> None:
                 shap_source = "xgb_gbtree_fallback"
                 shap_topk = compute_shap_topk(
                     model=gbt_model,
-                    x_ref=val.x,
+                    x_ref=val_thresh.x,
                     features=features,
                     max_samples=int(args.max_shap_samples),
                     top_k=int(args.top_k_shap),
@@ -950,16 +1037,29 @@ def main() -> None:
         "features": features,
         "feature_drop_reason": [],
         "feature_policy": feature_policy,
-        "shot_counts": {"train": len(split_train), "val": len(split_val), "test": len(split_test)},
+        "shot_counts": {
+            "train": len(split_train),
+            "val_total": len(split_val),
+            "val_calibration": len(split_val_calib),
+            "val_threshold": len(split_val_thresh),
+            "test": len(split_test),
+        },
         "point_counts": {
             "train_raw": train.n_raw,
             "train_used": train.n_used,
-            "val_raw": val.n_raw,
-            "val_used": val.n_used,
+            "val_calibration_raw": val_calib.n_raw,
+            "val_calibration_used": val_calib.n_used,
+            "val_threshold_raw": val_thresh.n_raw,
+            "val_threshold_used": val_thresh.n_used,
             "test_raw": test.n_raw,
             "test_used": test.n_used,
         },
-        "missing_shots": {"train": train.missing_shots, "val": val.missing_shots, "test": test.missing_shots},
+        "missing_shots": {
+            "train": train.missing_shots,
+            "val_calibration": val_calib.missing_shots,
+            "val_threshold": val_thresh.missing_shots,
+            "test": test.missing_shots,
+        },
         "labeling": {
             "gray_ms": float(args.gray_ms),
             "fallback_fls_ms": float(args.fallback_fls_ms),
@@ -970,9 +1070,16 @@ def main() -> None:
         "calibration": args.calibration_method,
         "threshold_policy": {
             "objective": args.threshold_objective,
+            "max_shot_fpr": float(args.threshold_max_shot_fpr),
             "theta": float(theta),
             "sustain_ms": float(args.sustain_ms),
             "selection_diag": theta_diag,
+        },
+        "calibration_split": {
+            "calibration_shot_fraction": float(args.calibration_shot_fraction),
+            "val_total_shots": int(len(split_val)),
+            "val_calibration_shots": int(len(split_val_calib)),
+            "val_threshold_shots": int(len(split_val_thresh)),
         },
         "plotting": plotting_config,
         "xgb_params": {
@@ -992,7 +1099,19 @@ def main() -> None:
         "target_accuracy": 0.98,
         "target_accuracy_achieved": bool(float(test_metrics_cal["accuracy"]) >= 0.98),
         "feature_policy": feature_policy,
-        "split_shot_counts": {"train": len(split_train), "val": len(split_val), "test": len(split_test)},
+        "split_shot_counts": {
+            "train": len(split_train),
+            "val_total": len(split_val),
+            "val_calibration": len(split_val_calib),
+            "val_threshold": len(split_val_thresh),
+            "test": len(split_test),
+        },
+        "calibration_split": {
+            "calibration_shot_fraction": float(args.calibration_shot_fraction),
+            "val_total_shots": int(len(split_val)),
+            "val_calibration_shots": int(len(split_val_calib)),
+            "val_threshold_shots": int(len(split_val_thresh)),
+        },
         "plotting": plotting_config,
         "artifact_file_counts": artifact_file_counts,
         "reason_summary": {
@@ -1005,9 +1124,11 @@ def main() -> None:
         "val_timepoint_calibrated": val_metrics_cal,
         "test_timepoint_calibrated": test_metrics_cal,
         "test_shot_policy": shot_metrics_test,
+        "calibration_threshold_delta": cal_delta,
         "calibration_val_delta": cal_delta,
         "threshold_policy": {
             "objective": args.threshold_objective,
+            "max_shot_fpr": float(args.threshold_max_shot_fpr),
             "theta": float(theta),
             "sustain_ms": float(args.sustain_ms),
             "selection_diag": theta_diag,
