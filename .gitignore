@@ -1,0 +1,17 @@
+# Large data / model artifacts
+*.h5
+*.hdf5
+*.mat
+
+# Ignore all CSV by default (keep only if explicitly needed)
+#*.csv
+
+# Dataset directories
+/data/
+
+# Model weights (both common locations)
+/models/**/*.pt
+/analysis/outputs/**/*.pt
+*.pt
+# Training outputs and generated experiment artifacts
+#/analysis/outputs/
