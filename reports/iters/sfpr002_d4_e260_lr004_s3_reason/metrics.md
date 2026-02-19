@@ -1,6 +1,6 @@
 # Agent-3 Metrics Summary
 
-- Generated at (UTC): `2026-02-19T14:12:11.461167+00:00`
+- Generated at (UTC): `2026-02-19T15:03:36.386607+00:00`
 - Selected baseline: `xgb_dart`
 - Accuracy>=0.98: `ACHIEVED`
 - Feature policy: `use_all_required_features` (23/23)
@@ -45,13 +45,13 @@
 
 | Artifact Type | Count |
 |---|---:|
-| probability_timeline_png | 0 |
-| report_plot_png_total | 2 |
+| probability_timeline_png | 173 |
+| report_plot_png_total | 175 |
 
 ## Plotting Controls Used
 
-- plot_all_test_shots: `False`
-- plot_shot_limit: `0`
+- plot_all_test_shots: `True`
+- plot_shot_limit: `3`
 - test_shot_count: `173`
 
 ## Disruption Reason Coverage

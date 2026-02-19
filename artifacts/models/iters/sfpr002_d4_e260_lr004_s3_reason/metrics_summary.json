@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-02-19T14:12:11.461167+00:00",
+  "generated_at_utc": "2026-02-19T15:03:36.386607+00:00",
   "selected_model": "xgb_dart",
   "shap_source": "xgb_dart_gain_fallback_no_shap",
   "target_accuracy": 0.98,
@@ -24,14 +24,14 @@
     "val_threshold_shots": 87
   },
   "plotting": {
-    "plot_all_test_shots": false,
-    "plot_shot_limit": 0,
+    "plot_all_test_shots": true,
+    "plot_shot_limit": 3,
     "test_shot_count": 173,
-    "generated_timeline_png": 0
+    "generated_timeline_png": 173
   },
   "artifact_file_counts": {
-    "probability_timeline_png": 0,
-    "report_plot_png_total": 2
+    "probability_timeline_png": 173,
+    "report_plot_png_total": 175
   },
   "reason_summary": {
     "disruptive_shots_test": 38,

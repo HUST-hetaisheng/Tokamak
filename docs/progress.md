@@ -58,12 +58,9 @@ Done:
 - Added validation threshold objective selection via `--threshold-objective {youden,accuracy,shot_fpr_constrained}`.
 - Ran continuation training on full split sizes (train=1386, val=174, test=173); validation was split into calibration=87 and threshold=87 shots.
 - Kept 23-feature use-all-by-default policy (23/23) and persisted it in `training_config.json`.
-- Produced `0` probability timeline PNG files for test shots.
+- Produced `173` probability timeline PNG files for test shots.
 - Produced `38` per-disruptive-shot reason rows (expected disruptive shots in TEST: 38).
-- Parameter sweep total: 7 runs; current recommended run is `sfpr002_d4_e260_lr004_s3_reason`.
-- Current recommended metrics: accuracy=0.990885, roc_auc=0.978437, shot_accuracy=0.953757, shot_tpr=0.842105, shot_fpr=0.014815.
-- Reason coverage in recommended run: 38/38 disruptive TEST shots.
-- Added readable per-shot reason markdown report generation (`src/models/generate_reason_report.py`) and generated reports for `sfpr002`/`sfpr001`.
+- Current test metrics: accuracy=0.990885, roc_auc=0.978437, shot_accuracy=0.953757, threshold=0.668796 (shot_fpr_constrained).
 Next:
 - Coordinate with reviewer on threshold objective trade-offs and calibration holdout strategy.
 Blockers:
@@ -72,13 +69,17 @@ Artifacts:
 - `src/models/train.py`
 - `src/models/eval.py`
 - `src/models/calibrate.py`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/model_xgb_dart.json`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/calibrator.joblib`
 - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/training_config.json`
 - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/metrics_summary.json`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/shap_topk.csv`
 - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/warning_summary_test.csv`
 - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_per_shot.csv`
-- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_report.md`
 - `reports/iters/sfpr002_d4_e260_lr004_s3_reason/metrics.md`
-- `reports/iters/summary.md`
+- `reports/iters/sfpr002_d4_e260_lr004_s3_reason/plots/calibration_curve_test.png`
+- `reports/iters/sfpr002_d4_e260_lr004_s3_reason/plots/probability_timelines_test.csv`
+- `reports/iters/sfpr002_d4_e260_lr004_s3_reason/plots/probability`
 ## Agent-4 (Reviewer / Maintainer)
 Status: in_progress
 Done:
