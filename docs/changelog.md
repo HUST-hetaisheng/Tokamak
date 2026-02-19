@@ -21,6 +21,11 @@ This log tracks repo milestones by implementation stage (commit-aligned when com
   - `artifacts/models/iters/sfpr001_d4_e260_lr004_s3_reason/*`
 - Per-shot reason files for the above runs:
   - `disruption_reason_per_shot.csv` (one row per disruptive TEST shot, with top-k evidence).
+- Readable per-shot markdown reports:
+  - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_report.md`
+  - `artifacts/models/iters/sfpr001_d4_e260_lr004_s3_reason/disruption_reason_report.md`
+- New report renderer:
+  - `src/models/generate_reason_report.py`
 
 ### Current Recommended Run
 - `sfpr002_d4_e260_lr004_s3_reason`

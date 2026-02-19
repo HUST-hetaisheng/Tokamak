@@ -63,6 +63,7 @@ Done:
 - Parameter sweep total: 7 runs; current recommended run is `sfpr002_d4_e260_lr004_s3_reason`.
 - Current recommended metrics: accuracy=0.990885, roc_auc=0.978437, shot_accuracy=0.953757, shot_tpr=0.842105, shot_fpr=0.014815.
 - Reason coverage in recommended run: 38/38 disruptive TEST shots.
+- Added readable per-shot reason markdown report generation (`src/models/generate_reason_report.py`) and generated reports for `sfpr002`/`sfpr001`.
 Next:
 - Coordinate with reviewer on threshold objective trade-offs and calibration holdout strategy.
 Blockers:
@@ -75,6 +76,7 @@ Artifacts:
 - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/metrics_summary.json`
 - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/warning_summary_test.csv`
 - `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_per_shot.csv`
+- `artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_report.md`
 - `reports/iters/sfpr002_d4_e260_lr004_s3_reason/metrics.md`
 - `reports/iters/summary.md`
 ## Agent-4 (Reviewer / Maintainer)

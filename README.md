@@ -110,6 +110,14 @@ python -m src.models.train `
   --report-dir reports/iters/sfpr002_d4_e260_lr004_s3_reason
 ```
 
+### 2d) Generate per-shot readable reason report (Markdown)
+
+```powershell
+python -m src.models.generate_reason_report `
+  --reason-csv artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_per_shot.csv `
+  --title "Per-Shot Disruption Reason Report (sfpr002)"
+```
+
 ### 3) Streaming prediction on custom matrix
 
 ```powershell
@@ -205,6 +213,7 @@ The full 173-shot artifacts are in CSV form:
 | `reports/plots/probability_timelines_test.csv` | Full timepoint-level timeline table for all 173 TEST shots (relaunch artifacts). | Full-batch analysis, aggregation, and custom plotting. |
 | `artifacts/models/best/warning_summary_test.csv` | Full shot-level warning decisions for the same 173 TEST shots. | Shot-level policy analysis and confusion/lead-time checks. |
 | `artifacts/models/iters/*/disruption_reason_per_shot.csv` | Per-disruptive-shot mechanism reason table (primary mechanism + top-k feature evidence). | Explain each disruptive shot and trace operator-facing root-cause hypotheses. |
+| `artifacts/models/iters/*/disruption_reason_report.md` | Readable per-shot markdown report with mechanism distribution and shot-by-shot evidence. | Human review, experiment logs, and handoff to control/operations teams. |
 | `reports/iters/summary.md` | Hyperparameter sweep comparison table and current recommended run. | Parameter iteration tracking and next-run selection. |
 | `artifacts/models/best/metrics_summary.json` | Relaunch-stage bounded MVP summary metrics. | Baseline comparison and report updates. |
 | `output/` | Reserved location for generated artifacts requested by users. | Use for ad-hoc generated exports and reports. |
