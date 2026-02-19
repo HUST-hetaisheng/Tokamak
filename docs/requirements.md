@@ -86,3 +86,15 @@
 - Zero-shot transfer productionization.
 - Long-horizon hyperparameter sweeps or exhaustive model zoo comparisons.
 
+## 7. Appendix: Output Artifacts and Physics Interpretability
+
+This appendix links each key output artifact to the paper-aligned physics concept it supports in interpretation.
+
+| Artifact file | Interpretability role | Paper concept supported |
+|---|---|---|
+| `output/**/training_config.json` | Freezes split seed, label window, feature list, and model settings so interpretation is tied to a reproducible experiment definition. | DART protocol reproducibility and fixed-label policy (`ref/paper_131.txt:1836`, `ref/paper_131.txt:1880`). |
+| `output/**/normalization_stats.json` | Stores per-feature `mu/sigma` so feature magnitudes and cross-shot comparisons remain physically comparable. | Training-derived normalization; transfer precondition used by EFD/CORAL workflows (`ref/paper_131.txt:1885`, `ref/paper_131.txt:2834`). |
+| `output/**/metrics_summary.json` | Quantifies discrimination quality (`AUC`, `TPR`, `FPR`) to validate whether extracted physics signals are operationally useful. | J-TEXT baseline quantitative target framing (`ref/paper_131.txt:1928`). |
+| `output/**/sequence_predictions/*.csv` | Provides time-resolved `P(disruption|t)` and warning points for precursor-timeline interpretation at shot level. | Early-warning framing from disruption precursor evolution (`ref/paper_131.txt:1457`, `ref/paper_131.txt:1523`). |
+| `output/**/shap_topk.csv` (or equivalent SHAP export) | Maps model contributions back to feature families to assess whether dominant signals align with known mechanisms. | SHAP-based mechanism analysis and PGFE family interpretation (`ref/paper_131.txt:1843`, `ref/paper_131.txt:3460`, `ref/paper_131.txt:1416`). |
+| `artifacts/datasets/jtext_v1/required_features.json` (data-build stage) | Documents feature-space contract so MHD/radiation/density/control coverage is explicit before model fitting. | PGFE feature-group definition and device-portable feature semantics (`ref/paper_131.txt:1416`, `ref/paper_131.txt:2228`). |

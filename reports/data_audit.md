@@ -65,6 +65,15 @@
   - `splits/train.txt`
   - `splits/val.txt`
   - `splits/test.txt`
+- Shot-count references (authoritative):
+  - `artifacts/datasets/jtext_v1/summary.json`:
+    - `splits.train.shots=1386`
+    - `splits.val.shots=174`
+    - `splits.test.shots=173`
+  - Split-id files (one shot id per line; line counts should match):
+    - `splits/train.txt`
+    - `splits/val.txt`
+    - `splits/test.txt`
 
 ## Class Imbalance Handling
 - Considered:
@@ -83,6 +92,11 @@
 - gray dropped points: `11221`
 
 ## 3-Shot y(t) Examples
+- Note: only 3 `y(t)` plots are generated here on purpose, as representative audit samples
+  (one per labeling scenario) to keep this MVP audit lightweight and readable.
+- Full test-shot timelines are saved separately by downstream evaluation:
+  - `reports/plots/probability_timelines_test.csv` (all test-shot timeline rows)
+  - `reports/plots/probability/` (rendered timeline PNG subset)
 - disruptive with advanced_time:
   - shot `1051501`
   - plot: `reports/plots/data_audit/shot_1051501_disrupt_with_advanced.png`
@@ -108,4 +122,3 @@
   - `splits/train.txt`
   - `splits/val.txt`
   - `splits/test.txt`
-

@@ -15,3 +15,10 @@
 *.pt
 # Training outputs and generated experiment artifacts
 #/analysis/outputs/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Large per-shot visualization batches (keep summary CSVs and key plots only)
+reports/plots/probability/*.png

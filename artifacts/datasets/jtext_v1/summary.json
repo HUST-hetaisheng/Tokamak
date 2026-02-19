@@ -135,5 +135,10 @@
     "val_txt": "D:\\Fuison\\splits\\val.txt",
     "test_txt": "D:\\Fuison\\splits\\test.txt",
     "plot_dir": "D:\\Fuison\\reports\\plots\\data_audit"
+  },
+  "notes": {
+    "yt_plot_policy": "Only three y(t) plots are generated in data audit as representative sample visualizations (not full coverage).",
+    "full_test_timelines_csv": "D:\\Fuison\\reports\\plots\\probability_timelines_test.csv",
+    "split_shot_count_reference": "Use splits.train.shots/splits.val.shots/splits.test.shots and cross-check with line counts of splits/train.txt, splits/val.txt, and splits/test.txt."
   }
 }

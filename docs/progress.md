@@ -3,14 +3,15 @@
 Last Updated: 2026-02-19
 
 ## Agent-1 (Researcher / Learner)
-Status: completed
+Status: relaunched (in_progress)
 Done:
 - Read `ref/paper_131.txt` and project markdowns relevant to mechanism extraction and method chain summary.
 - Produced mechanism taxonomy and observable feature relations (density limit, locked mode, VDE/low-q, impurity/radiation pathways).
 - Completed method-chain summary for PGFE, FLS, (S-)CORAL, DART, SHAP, and EFD with reproducibility notes.
+- Kept existing research docs intact and added an appendix mapping output artifacts to physics-interpretability concepts in `docs/requirements.md`.
 Next:
-- Support Agent-2/Agent-3 clarification on phase-1 J-TEXT baseline assumptions if requested.
-- Revise docs based on reviewer feedback.
+- Maintain the artifact-to-interpretability mapping as Agent-2/Agent-3 outputs evolve.
+- Revise terminology/citations if reviewer feedback requires stricter traceability.
 Blockers:
 - None.
 Artifacts:
@@ -27,6 +28,8 @@ Done:
 - Ran bounded MVP build and generated small artifacts under `artifacts/datasets/jtext_v1/`.
 - Built stratified shot splits (8/1/1) into `splits/train.txt`, `splits/val.txt`, `splits/test.txt`.
 - Produced data audit report and 3-shot `y(t)` plots in `reports/data_audit.md` and `reports/plots/data_audit/`.
+- Clarified in `reports/data_audit.md` that 3-shot `y(t)` plots are sample audit visualizations only; full test timelines are in `reports/plots/probability_timelines_test.csv` (with rendered subset in `reports/plots/probability/`).
+- Added explicit train/val/test shot-count references in `reports/data_audit.md` and `artifacts/datasets/jtext_v1/summary.json`, with split-id sources in `splits/train.txt`, `splits/val.txt`, and `splits/test.txt`.
 Next:
 - Hand off split/artifact outputs to Agent-3 for downstream training.
 - Extend pipeline options if reviewer/modeling feedback requires alternate ratios or stricter filters.
@@ -49,16 +52,32 @@ Artifacts:
 - `reports/data_audit.md`
 
 ## Agent-3 (Modeler / Experimenter)
-Status: waiting_dependency
+Status: completed
 Done:
-- Waiting for Agent-1 and Agent-2 outputs.
+- Added train CLI plotting controls `--plot-shot-limit` and `--plot-all-test-shots` to resolve limited timeline exports.
+- Added validation threshold objective selection via `--threshold-objective {youden,accuracy}`.
+- Ran continuation training on full split sizes (train=1386, val=174, test=173).
+- Kept 23-feature use-all-by-default policy (23/23) and persisted it in `training_config.json`.
+- Produced `173` probability timeline PNG files for test shots.
+- Current test metrics: accuracy=0.992293, roc_auc=0.985884, shot_accuracy=0.936416, threshold=0.468863 (accuracy).
 Next:
-- Start baseline training/eval/calibration after dependencies are ready.
+- Coordinate with reviewer on threshold objective trade-offs and calibration holdout strategy.
 Blockers:
-- Waiting `docs/requirements.md` and dataset split/artifact outputs.
+- None.
 Artifacts:
-- (pending)
-
+- `src/models/train.py`
+- `src/models/eval.py`
+- `src/models/calibrate.py`
+- `artifacts/models/best/model_xgb_dart.json`
+- `artifacts/models/best/calibrator.joblib`
+- `artifacts/models/best/training_config.json`
+- `artifacts/models/best/metrics_summary.json`
+- `artifacts/models/best/shap_topk.csv`
+- `artifacts/models/best/warning_summary_test.csv`
+- `reports/metrics.md`
+- `reports/plots/calibration_curve_test.png`
+- `reports/plots/probability_timelines_test.csv`
+- `reports/plots/probability`
 ## Agent-4 (Reviewer / Maintainer)
 Status: in_progress
 Done:
@@ -66,24 +85,29 @@ Done:
 - Added first dated entry in `docs/code_review_log.md`.
 - Reviewed Agent-2 pipeline and metadata artifacts: `src/data/build_dataset.py`, `reports/data_audit.md`, `artifacts/datasets/jtext_v1/*`, and `splits/*.txt`.
 - Appended severity-tagged findings with file/function references in `docs/code_review_log.md`.
+- Reviewed Agent-3 outputs: `src/models/train.py`, `src/models/eval.py`, `src/models/calibrate.py`, `artifacts/models/best/metrics_summary.json`, `reports/metrics.md`.
+- Appended severity-ranked Agent-3 findings (threshold-policy mismatch, calibration overfitting risk, label-integrity checks, and reproducibility gaps) to `docs/code_review_log.md`.
+- Reviewed Agent-3 relaunch delta and appended severity-ranked findings on threshold-objective correctness, calibration validity bias, label-integrity leakage guard gaps, and plotting behavior diagnostics in `docs/code_review_log.md`.
 Next:
-- Continue short-cycle polling for incoming Agent-3 outputs (`src/models/*.py`, `reports/metrics.md`).
-- Review model/evaluation code for leakage, time-axis alignment, metric/calibration validity, and reproducibility, then append findings incrementally.
+- Verify Agent-3 remediation with rerun artifacts, prioritizing threshold search aligned to shot-level FAR targets and calibration/threshold split isolation.
+- Recheck plotting outputs for representative TP/FP/TN/FN timelines and corrected calibration-bin count reporting.
 Blockers:
-- Waiting for first reviewable Agent-3 model/evaluation files (`src/models/*.py`, `reports/metrics.md`).
+- Waiting on Agent-3 remediation updates for the relaunch findings logged in `docs/code_review_log.md`.
 Artifacts:
 - `docs/code_review_log.md`
 
 ## Agent-5 (Technical Writer)
 Status: completed
 Done:
-- Completed this docs cycle and created `docs/architecture.md`.
-- Completed this docs cycle and created `docs/changelog.md`.
-- Captured decision rationale: FLS+gray-zone labeling, DART+calibration+SHAP, transfer-ready EAST interface.
+- Added `README.md` Artifact Guide (path + role + when to read) for relaunch-critical files.
+- Explicitly documented why only a few shot PNGs exist by default and pointed to full 173-shot CSV artifacts.
+- Updated full-shot rerun command in `README.md` with current train flags (`--max-train-shots 0`, `--max-val-shots 0`, `--max-test-shots 0`, `--plot-all-test-shots`, `--threshold-objective accuracy`).
+- Added relaunch stage notes to `docs/changelog.md`.
 Next:
-- Keep documentation synchronized as Agent-2/3 finalize pipeline scripts and outputs.
+- Keep artifact pointers synchronized with future EAST/J-TEXT reruns and output path changes.
 Blockers:
-- None for the current documentation cycle.
+- None.
 Artifacts:
-- `docs/architecture.md`
+- `README.md`
 - `docs/changelog.md`
+- `docs/progress.md`

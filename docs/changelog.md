@@ -2,6 +2,25 @@
 
 This log tracks repo milestones by implementation stage (commit-aligned when commits are available).
 
+## 2026-02-19 - Stage R1 - Relaunch documentation sync (Agent-5)
+
+### Updated
+- Added `Artifact Guide` in `README.md` with key file paths, roles, and read timing.
+- Added explicit clarification in `README.md` that only a few timeline PNGs are exported by default, and that full 173-shot results are stored in CSV artifacts.
+- Added full-shot rerun command in `README.md` using current train flags:
+  - `--max-train-shots 0`
+  - `--max-val-shots 0`
+  - `--max-test-shots 0`
+  - `--plot-all-test-shots`
+  - `--threshold-objective accuracy`
+- Synced `docs/progress.md` Agent-5 status for relaunch handoff.
+
+### Artifact Pointers
+- `README.md`
+- `reports/plots/probability_timelines_test.csv`
+- `artifacts/models/best/warning_summary_test.csv`
+- `docs/progress.md`
+
 ## 2026-02-19 - Stage M0 - EAST dataset catalog pipeline
 
 ### Added

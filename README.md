@@ -70,6 +70,21 @@ py -3.14 $TRAIN_ENTRY train `
   --num-workers 0
 ```
 
+### 2b) Full-shot rerun (J-TEXT DART pipeline, no shot cap)
+
+Use the current modeling entrypoint and disable caps with `--max-*-shots 0`.  
+This is the command used in the relaunch stage:
+
+```powershell
+python -m src.models.train `
+  --repo-root . `
+  --max-train-shots 0 `
+  --max-val-shots 0 `
+  --max-test-shots 0 `
+  --plot-all-test-shots `
+  --threshold-objective accuracy
+```
+
 ### 3) Streaming prediction on custom matrix
 
 ```powershell
@@ -141,22 +156,28 @@ print("saved:", out_png)
 '@ | py -3.14 -
 ```
 
-## Artifact Locations
+## PNG Count And 173-Shot Outputs
 
-- Dataset catalog:
-  - `data/EAST/exports/east_shot_catalog_all.csv`
-  - `data/EAST/exports/east_usable_shot_level.csv`
-  - `data/EAST/exports/east_usable_shots_only.csv`
-  - `data/EAST/exports/east_shot_catalog_summary.json`
-- Training/eval run:
-  - `analysis/outputs/<run_name>/best_model.pt`
-  - `analysis/outputs/<run_name>/training_history.csv`
-  - `analysis/outputs/<run_name>/metrics_summary.json`
-  - `analysis/outputs/<run_name>/sequence_predictions/val/*.csv`
-  - `analysis/outputs/<run_name>/sequence_predictions/test/*.csv`
-  - `analysis/outputs/<run_name>/sequence_predictions/*/_summary.csv`
-- Calibration placeholder output:
-  - `analysis/outputs/<run_name>/calibration/isotonic.joblib`
-  - `analysis/outputs/<run_name>/calibration/val_calibrated_points.csv`
+By default, only a few shot PNGs are exported because the trainer uses preview mode (`--plot-shot-limit 3`) unless `--plot-all-test-shots` is enabled.
 
-`output/` remains reserved for generated artifacts.
+In the latest relaunch full-shot run, `--plot-all-test-shots` was enabled and `173` shot PNGs were generated in:
+- `reports/plots/probability/`
+
+The full 173-shot artifacts are in CSV form:
+- Full per-timepoint timelines: `reports/plots/probability_timelines_test.csv` (173 unique `shot_id`).
+- Full per-shot warning summary: `artifacts/models/best/warning_summary_test.csv` (173 rows).
+
+## Artifact Guide
+
+| Path | Role | When to read |
+|---|---|---|
+| `ref/paper_131.txt` | Core prior-knowledge reference for mechanism, feature, and labeling choices. | Before changing feature set, label strategy, or evaluation policy. |
+| `data/EAST/exports/east_shot_catalog_summary.json` | EAST catalog availability and usability summary. | Before launching training to verify data coverage. |
+| `analysis/outputs/<run_name>/metrics_summary.json` | EAST run-level metrics and headline performance. | Immediately after each `train` run. |
+| `analysis/outputs/<run_name>/sequence_predictions/test/_summary.csv` | EAST test shot-level summary. | When checking warning hit/miss behavior per shot. |
+| `analysis/outputs/<run_name>/sequence_predictions/test/*.csv` | EAST per-shot probability timelines. | When plotting or diagnosing an individual shot timeline. |
+| `reports/plots/probability/shot_*_timeline.png` | Small visual sanity-check set of timeline plots (sampled shots). | Quick visual QA only; not full-shot coverage. |
+| `reports/plots/probability_timelines_test.csv` | Full timepoint-level timeline table for all 173 TEST shots (relaunch artifacts). | Full-batch analysis, aggregation, and custom plotting. |
+| `artifacts/models/best/warning_summary_test.csv` | Full shot-level warning decisions for the same 173 TEST shots. | Shot-level policy analysis and confusion/lead-time checks. |
+| `artifacts/models/best/metrics_summary.json` | Relaunch-stage bounded MVP summary metrics. | Baseline comparison and report updates. |
+| `output/` | Reserved location for generated artifacts requested by users. | Use for ad-hoc generated exports and reports. |
