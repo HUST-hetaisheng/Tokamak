@@ -1,0 +1,92 @@
+{
+  "generated_at_utc": "2026-02-19T13:22:50.445319+00:00",
+  "data_root": "G:\\\u6211\u7684\u4e91\u7aef\u786c\u76d8\\Fuison\\data",
+  "hdf5_root": "G:\\\u6211\u7684\u4e91\u7aef\u786c\u76d8\\Fuison\\data\\J-TEXT\\unified_hdf5",
+  "feature_count": 23,
+  "features": [
+    "Bt",
+    "CIII",
+    "MNM",
+    "Mir_VV",
+    "Mir_avg_amp",
+    "Mir_avg_fre",
+    "Z_proxy",
+    "dx_a",
+    "dy_a",
+    "ip",
+    "mode_number_n",
+    "n=1 amplitude",
+    "ne_nG",
+    "qa_proxy",
+    "sxr_kurt",
+    "sxr_mean",
+    "sxr_skew",
+    "sxr_var",
+    "v_loop",
+    "xuv_kurt",
+    "xuv_ratio",
+    "xuv_skew",
+    "xuv_var"
+  ],
+  "feature_drop_reason": [],
+  "feature_policy": {
+    "mode": "use_all_required_features",
+    "use_all_by_default": true,
+    "expected_feature_count": 23,
+    "selected_feature_count": 23
+  },
+  "shot_counts": {
+    "train": 1386,
+    "val": 174,
+    "test": 173
+  },
+  "point_counts": {
+    "train_raw": 474461,
+    "train_used": 465493,
+    "val_raw": 59753,
+    "val_used": 58631,
+    "test_raw": 57961,
+    "test_used": 56830
+  },
+  "missing_shots": {
+    "train": [],
+    "val": [],
+    "test": []
+  },
+  "labeling": {
+    "gray_ms": 30.0,
+    "fallback_fls_ms": 25.0,
+    "fallback_dt_ms": 1.0
+  },
+  "class_imbalance": {
+    "train_pos_points": 5759,
+    "train_neg_points": 459734,
+    "scale_pos_weight": 79.82878972043757
+  },
+  "selected_model": "xgb_dart",
+  "calibration": "isotonic",
+  "threshold_policy": {
+    "objective": "accuracy",
+    "theta": 0.4262541806020067,
+    "sustain_ms": 3.0,
+    "selection_diag": {
+      "accuracy": 0.9877368627517866,
+      "tpr": 0.4716636197440585,
+      "fpr": 0.0024505970071432297,
+      "objective": "accuracy"
+    }
+  },
+  "plotting": {
+    "plot_all_test_shots": false,
+    "plot_shot_limit": 0,
+    "test_shot_count": 173,
+    "generated_timeline_png": 0
+  },
+  "xgb_params": {
+    "n_estimators": 260,
+    "learning_rate": 0.04,
+    "max_depth": 4,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9
+  }
+}

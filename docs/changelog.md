@@ -2,6 +2,31 @@
 
 This log tracks repo milestones by implementation stage (commit-aligned when commits are available).
 
+## 2026-02-19 - Stage R2 - J-TEXT parameter sweep + per-shot disruption reasons
+
+### Added
+- Multi-run hyperparameter sweep outputs under:
+  - `artifacts/models/iters/*`
+  - `reports/iters/*`
+- Sweep summary tables:
+  - `reports/iters/summary.csv`
+  - `reports/iters/summary.md`
+- Per-disruptive-shot reason export in training pipeline:
+  - `disruption_reason_per_shot.csv` (one row per disruptive TEST shot).
+
+### Updated
+- `src/models/train.py`
+  - Added `--reason-top-k` (default `3`) for per-shot reason extraction.
+  - Added contribution-based mechanism mapping output for disruptive shots.
+  - Added dynamic progress artifact path reporting (no longer hardcoded to `artifacts/models/best/*`).
+- `docs/progress.md`
+  - Synced Agent-3 with sweep status and current recommended run.
+
+### Current Recommended Run
+- `acc_d4_e260_lr004_ss085_cs09_s3_reason`
+- Key metrics (TEST): `accuracy=0.991008`, `roc_auc=0.978493`, `shot_accuracy=0.953757`, `shot_tpr=0.842105`, `shot_fpr=0.014815`
+- Reason coverage: `38/38` disruptive test shots with reason rows.
+
 ## 2026-02-19 - Stage R1 - Relaunch documentation sync (Agent-5)
 
 ### Updated

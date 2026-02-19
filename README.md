@@ -179,5 +179,7 @@ The full 173-shot artifacts are in CSV form:
 | `reports/plots/probability/shot_*_timeline.png` | Small visual sanity-check set of timeline plots (sampled shots). | Quick visual QA only; not full-shot coverage. |
 | `reports/plots/probability_timelines_test.csv` | Full timepoint-level timeline table for all 173 TEST shots (relaunch artifacts). | Full-batch analysis, aggregation, and custom plotting. |
 | `artifacts/models/best/warning_summary_test.csv` | Full shot-level warning decisions for the same 173 TEST shots. | Shot-level policy analysis and confusion/lead-time checks. |
+| `artifacts/models/iters/*/disruption_reason_per_shot.csv` | Per-disruptive-shot mechanism reason table (primary mechanism + top-k feature evidence). | Explain each disruptive shot and trace operator-facing root-cause hypotheses. |
+| `reports/iters/summary.md` | Hyperparameter sweep comparison table and current recommended run. | Parameter iteration tracking and next-run selection. |
 | `artifacts/models/best/metrics_summary.json` | Relaunch-stage bounded MVP summary metrics. | Baseline comparison and report updates. |
 | `output/` | Reserved location for generated artifacts requested by users. | Use for ad-hoc generated exports and reports. |

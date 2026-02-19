@@ -22,3 +22,13 @@ __pycache__/
 
 # Large per-shot visualization batches (keep summary CSVs and key plots only)
 reports/plots/probability/*.png
+reports/iters/*/plots/probability_timelines_test.csv
+
+# Keep sweep metrics/configs, skip heavy per-run model binaries
+artifacts/models/iters/*/model_xgb_dart.json
+artifacts/models/iters/*/calibrator.joblib
+artifacts/models/iters/*/calibration_curve_points_test.csv
+artifacts/models/iters/*/feature_list.json
+artifacts/models/iters/*/normalization_stats.json
+artifacts/models/iters/*/shap_topk.csv
+reports/iters/*/plots/*.png

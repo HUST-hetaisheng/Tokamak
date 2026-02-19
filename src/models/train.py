@@ -93,9 +93,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sustain-ms", type=float, default=5.0)
     parser.add_argument("--plot-shot-limit", type=int, default=3)
     parser.add_argument("--plot-all-test-shots", action="store_true")
+    parser.add_argument("--reason-top-k", type=int, default=3)
     parser.add_argument("--max-shap-samples", type=int, default=5000)
     parser.add_argument("--top-k-shap", type=int, default=12)
     return parser.parse_args()
+
+
+def to_repo_rel(path: Path, repo_root: Path) -> str:
+    p = path.resolve()
+    r = repo_root.resolve()
+    try:
+        return str(p.relative_to(r)).replace("\\", "/")
+    except Exception:
+        return str(p).replace("\\", "/")
 
 
 def read_split_ids(path: Path) -> List[int]:
@@ -422,6 +432,118 @@ def compute_model_importance_topk(
     return pd.DataFrame(rows).sort_values("mean_abs_shap", ascending=False).head(top_k).reset_index(drop=True)
 
 
+def compute_disruption_reasons_per_shot(
+    model: xgb.XGBClassifier,
+    x_split: np.ndarray,
+    timeline_df: pd.DataFrame,
+    shot_summary: pd.DataFrame,
+    features: Sequence[str],
+    top_k: int,
+) -> pd.DataFrame:
+    if x_split.shape[0] != int(len(timeline_df)):
+        raise RuntimeError(
+            f"Timeline/feature length mismatch: x_split={x_split.shape[0]}, timeline={len(timeline_df)}"
+        )
+    if top_k <= 0:
+        top_k = 1
+
+    contrib_all = model.get_booster().predict(
+        xgb.DMatrix(x_split, feature_names=list(features)),
+        pred_contribs=True,
+        validate_features=False,
+    )
+    contrib_all = np.asarray(contrib_all, dtype=np.float64)
+    feat_contrib = contrib_all[:, : len(features)]
+
+    warn_lookup = shot_summary.set_index("shot_id", drop=False) if not shot_summary.empty else pd.DataFrame()
+    rows: List[Dict[str, Any]] = []
+
+    for sid, g in timeline_df.groupby("shot_id", sort=True):
+        sid_int = int(sid)
+        if int(np.max(g["y_true"].to_numpy(dtype=int))) != 1:
+            continue
+
+        idx_all = g.index.to_numpy(dtype=np.int64)
+        idx_pos = g.index[g["y_true"].to_numpy(dtype=int) == 1].to_numpy(dtype=np.int64)
+        if idx_pos.size > 0:
+            idx_use = idx_pos
+            window_rule = "y_true==1"
+        else:
+            keep_n = int(min(200, idx_all.size))
+            idx_use = idx_all[-keep_n:]
+            window_rule = "tail_fallback"
+
+        mean_contrib = feat_contrib[idx_use].mean(axis=0)
+        pos_order = [int(i) for i in np.argsort(-mean_contrib) if mean_contrib[int(i)] > 0]
+        abs_order = [int(i) for i in np.argsort(-np.abs(mean_contrib))]
+        chosen: List[int] = []
+        for i in pos_order + abs_order:
+            if i not in chosen:
+                chosen.append(i)
+            if len(chosen) >= top_k:
+                break
+
+        top_entries: List[Dict[str, Any]] = []
+        mech_scores: Dict[str, float] = {}
+        for rank, i in enumerate(chosen, start=1):
+            feat = str(features[i])
+            contrib = float(mean_contrib[i])
+            tags = mechanism_tags(feat)
+            top_entries.append(
+                {
+                    "rank": rank,
+                    "feature": feat,
+                    "contribution": contrib,
+                    "mechanism_tags": tags,
+                }
+            )
+            for tag in [t for t in tags.split(",") if t and t != "unmapped"]:
+                mech_scores[tag] = mech_scores.get(tag, 0.0) + max(contrib, 0.0)
+
+        if mech_scores:
+            primary_mechanism = max(mech_scores.items(), key=lambda kv: kv[1])[0]
+            primary_score = float(mech_scores[primary_mechanism])
+        else:
+            primary_mechanism = "unmapped"
+            primary_score = 0.0
+
+        row: Dict[str, Any] = {
+            "shot_id": sid_int,
+            "primary_mechanism": primary_mechanism,
+            "primary_mechanism_score": primary_score,
+            "reason_window_rule": window_rule,
+            "reason_window_points": int(idx_use.size),
+            "top_features_json": json.dumps(top_entries, ensure_ascii=False),
+        }
+        for entry in top_entries:
+            r = int(entry["rank"])
+            row[f"top{r}_feature"] = entry["feature"]
+            row[f"top{r}_contribution"] = float(entry["contribution"])
+            row[f"top{r}_mechanism_tags"] = entry["mechanism_tags"]
+
+        if not warn_lookup.empty and sid_int in warn_lookup.index:
+            w = warn_lookup.loc[sid_int]
+            row["warning"] = int(w["warning"])
+            row["lead_time_ms"] = float(w["lead_time_ms"]) if pd.notna(w["lead_time_ms"]) else float("nan")
+            row["warning_time_to_end_ms"] = (
+                float(w["warning_time_to_end_ms"]) if pd.notna(w["warning_time_to_end_ms"]) else float("nan")
+            )
+        rows.append(row)
+
+    if not rows:
+        return pd.DataFrame(
+            columns=[
+                "shot_id",
+                "primary_mechanism",
+                "primary_mechanism_score",
+                "reason_window_rule",
+                "reason_window_points",
+                "top_features_json",
+            ]
+        )
+    return pd.DataFrame(rows).sort_values("shot_id").reset_index(drop=True)
+
+
 def write_markdown_report(path: Path, metrics: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     test = metrics["test_timepoint_calibrated"]
@@ -431,6 +553,7 @@ def write_markdown_report(path: Path, metrics: Dict[str, Any]) -> None:
     feature_policy = metrics.get("feature_policy", {})
     plotting = metrics.get("plotting", {})
     file_counts = metrics.get("artifact_file_counts", {})
+    reason_summary = metrics.get("reason_summary", {})
 
     lines = [
         "# Agent-3 Metrics Summary",
@@ -480,6 +603,14 @@ def write_markdown_report(path: Path, metrics: Dict[str, Any]) -> None:
         f"- plot_shot_limit: `{int(plotting.get('plot_shot_limit', 0))}`",
         f"- test_shot_count: `{int(plotting.get('test_shot_count', 0))}`",
         "",
+        "## Disruption Reason Coverage",
+        "",
+        "| Metric | Value |",
+        "|---|---:|",
+        f"| disruptive_shots_test | {int(reason_summary.get('disruptive_shots_test', 0))} |",
+        f"| reason_rows | {int(reason_summary.get('reason_rows', 0))} |",
+        f"| reason_top_k | {int(reason_summary.get('reason_top_k', 0))} |",
+        "",
         "## Baseline Comparison (Test raw P, threshold=0.5)",
         "",
         "| Model | accuracy | roc_auc | pr_auc | tpr | fpr |",
@@ -523,6 +654,9 @@ def update_progress(progress_path: Path, metrics: Dict[str, Any], artifacts: Lis
     test_acc = float(metrics["test_timepoint_calibrated"]["accuracy"])
     test_auc = float(metrics["test_timepoint_calibrated"]["roc_auc"])
     shot_acc = float(metrics["test_shot_policy"]["shot_accuracy"])
+    reason_summary = metrics.get("reason_summary", {})
+    reason_rows = int(reason_summary.get("reason_rows", 0))
+    disruptive_shots_test = int(reason_summary.get("disruptive_shots_test", 0))
     threshold_policy = metrics["threshold_policy"]
     threshold_objective = str(threshold_policy.get("objective", "youden"))
     split_counts = metrics.get("split_shot_counts", {})
@@ -543,6 +677,7 @@ def update_progress(progress_path: Path, metrics: Dict[str, Any], artifacts: Lis
         f"- Ran continuation training on full split sizes (train={train_shots}, val={val_shots}, test={test_shots}).",
         f"- Kept 23-feature use-all-by-default policy ({selected_feature_count}/{expected_feature_count}) and persisted it in `training_config.json`.",
         f"- Produced `{timeline_png_count}` probability timeline PNG files for test shots.",
+        f"- Produced `{reason_rows}` per-disruptive-shot reason rows (expected disruptive shots in TEST: {disruptive_shots_test}).",
         f"- Current test metrics: accuracy={test_acc:.6f}, roc_auc={test_auc:.6f}, shot_accuracy={shot_acc:.6f}, threshold={float(threshold_policy['theta']):.6f} ({threshold_objective}).",
         "Next:",
         "- Coordinate with reviewer on threshold objective trade-offs and calibration holdout strategy.",
@@ -699,6 +834,14 @@ def main() -> None:
     # Real-time warning policy on test timeline.
     shot_warn_test = apply_shot_warning_policy(test_timeline, threshold=float(theta), sustain_ms=float(args.sustain_ms))
     shot_metrics_test = compute_shot_level_metrics(shot_warn_test)
+    reason_df = compute_disruption_reasons_per_shot(
+        model=dart_model,
+        x_split=test.x,
+        timeline_df=test_timeline,
+        shot_summary=shot_warn_test,
+        features=features,
+        top_k=int(args.reason_top_k),
+    )
 
     # Calibration curve artifact.
     save_calibration_curve_plot(
@@ -785,6 +928,7 @@ def main() -> None:
     (output_dir / "normalization_stats.json").write_text(feature_stats.to_json(orient="records", indent=2), encoding="utf-8")
     shap_topk.to_csv(output_dir / "shap_topk.csv", index=False)
     shot_warn_test.to_csv(output_dir / "warning_summary_test.csv", index=False)
+    reason_df.to_csv(output_dir / "disruption_reason_per_shot.csv", index=False, encoding="utf-8")
     test_timeline.to_csv(plots_dir / "probability_timelines_test.csv", index=False)
 
     plotting_config = {
@@ -851,6 +995,11 @@ def main() -> None:
         "split_shot_counts": {"train": len(split_train), "val": len(split_val), "test": len(split_test)},
         "plotting": plotting_config,
         "artifact_file_counts": artifact_file_counts,
+        "reason_summary": {
+            "disruptive_shots_test": int((shot_warn_test["shot_label"] == 1).sum()),
+            "reason_rows": int(len(reason_df)),
+            "reason_top_k": int(args.reason_top_k),
+        },
         "baselines_val_raw": baselines_val_raw,
         "baselines_test_raw": baselines_test_raw,
         "val_timepoint_calibrated": val_metrics_cal,
@@ -873,16 +1022,17 @@ def main() -> None:
         "src/models/train.py",
         "src/models/eval.py",
         "src/models/calibrate.py",
-        "artifacts/models/best/model_xgb_dart.json",
-        "artifacts/models/best/calibrator.joblib",
-        "artifacts/models/best/training_config.json",
-        "artifacts/models/best/metrics_summary.json",
-        "artifacts/models/best/shap_topk.csv",
-        "artifacts/models/best/warning_summary_test.csv",
-        "reports/metrics.md",
-        "reports/plots/calibration_curve_test.png",
-        "reports/plots/probability_timelines_test.csv",
-        "reports/plots/probability",
+        to_repo_rel(output_dir / "model_xgb_dart.json", repo_root),
+        to_repo_rel(output_dir / "calibrator.joblib", repo_root),
+        to_repo_rel(output_dir / "training_config.json", repo_root),
+        to_repo_rel(output_dir / "metrics_summary.json", repo_root),
+        to_repo_rel(output_dir / "shap_topk.csv", repo_root),
+        to_repo_rel(output_dir / "warning_summary_test.csv", repo_root),
+        to_repo_rel(output_dir / "disruption_reason_per_shot.csv", repo_root),
+        to_repo_rel(report_dir / "metrics.md", repo_root),
+        to_repo_rel(plots_dir / "calibration_curve_test.png", repo_root),
+        to_repo_rel(plots_dir / "probability_timelines_test.csv", repo_root),
+        to_repo_rel(prob_plot_dir, repo_root),
     ]
     update_progress(repo_root / "docs/progress.md", metrics_summary, artifacts_for_progress)
 

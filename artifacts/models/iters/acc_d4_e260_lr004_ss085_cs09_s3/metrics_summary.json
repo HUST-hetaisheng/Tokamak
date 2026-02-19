@@ -1,0 +1,280 @@
+{
+  "generated_at_utc": "2026-02-19T13:22:50.450343+00:00",
+  "selected_model": "xgb_dart",
+  "shap_source": "xgb_dart_gain_fallback_no_shap",
+  "target_accuracy": 0.98,
+  "target_accuracy_achieved": true,
+  "feature_policy": {
+    "mode": "use_all_required_features",
+    "use_all_by_default": true,
+    "expected_feature_count": 23,
+    "selected_feature_count": 23
+  },
+  "split_shot_counts": {
+    "train": 1386,
+    "val": 174,
+    "test": 173
+  },
+  "plotting": {
+    "plot_all_test_shots": false,
+    "plot_shot_limit": 0,
+    "test_shot_count": 173,
+    "generated_timeline_png": 0
+  },
+  "artifact_file_counts": {
+    "probability_timeline_png": 0,
+    "report_plot_png_total": 2
+  },
+  "baselines_val_raw": {
+    "logreg": {
+      "threshold": 0.5,
+      "accuracy": 0.8428305845030786,
+      "roc_auc": 0.9278329255041959,
+      "pr_auc": 0.4208553023620879,
+      "tpr": 0.8647166361974405,
+      "fpr": 0.1575855536437423,
+      "tp": 946,
+      "fp": 9067,
+      "tn": 48470,
+      "fn": 148,
+      "ece_15_bins": 0.2304979864961318,
+      "brier": 0.11838685043922248,
+      "n_samples": 58631,
+      "positive_rate": 0.018659071139840697
+    },
+    "xgb_gbtree": {
+      "threshold": 0.5,
+      "accuracy": 0.963875765380089,
+      "roc_auc": 0.9818311730034046,
+      "pr_auc": 0.7079105663984173,
+      "tpr": 0.8638025594149908,
+      "fpr": 0.03422145749691503,
+      "tp": 945,
+      "fp": 1969,
+      "tn": 55568,
+      "fn": 149,
+      "ece_15_bins": 0.0793899762757297,
+      "brier": 0.028085092563918765,
+      "n_samples": 58631,
+      "positive_rate": 0.018659071139840697
+    },
+    "xgb_dart": {
+      "threshold": 0.5,
+      "accuracy": 0.9551261278163429,
+      "roc_auc": 0.9820931457538539,
+      "pr_auc": 0.6461536790585833,
+      "tpr": 0.8829981718464351,
+      "fpr": 0.04350244190694683,
+      "tp": 966,
+      "fp": 2503,
+      "tn": 55034,
+      "fn": 128,
+      "ece_15_bins": 0.1150760500968078,
+      "brier": 0.038083928739458726,
+      "n_samples": 58631,
+      "positive_rate": 0.018659071139840697
+    }
+  },
+  "baselines_test_raw": {
+    "logreg": {
+      "threshold": 0.5,
+      "accuracy": 0.8680978356501847,
+      "roc_auc": 0.8958854885853766,
+      "pr_auc": 0.23660560314315646,
+      "tpr": 0.7303370786516854,
+      "fpr": 0.12993271341626658,
+      "tp": 585,
+      "fp": 7280,
+      "tn": 48749,
+      "fn": 216,
+      "ece_15_bins": 0.2181710424136344,
+      "brier": 0.10187355842449977,
+      "n_samples": 56830,
+      "positive_rate": 0.01409466830899173
+    },
+    "xgb_gbtree": {
+      "threshold": 0.5,
+      "accuracy": 0.9649480907971142,
+      "roc_auc": 0.9833333032526027,
+      "pr_auc": 0.7040030053922928,
+      "tpr": 0.8414481897627965,
+      "fpr": 0.03328633386282104,
+      "tp": 674,
+      "fp": 1865,
+      "tn": 54164,
+      "fn": 127,
+      "ece_15_bins": 0.08198638866293685,
+      "brier": 0.027742487184151114,
+      "n_samples": 56830,
+      "positive_rate": 0.01409466830899173
+    },
+    "xgb_dart": {
+      "threshold": 0.5,
+      "accuracy": 0.9519971845856062,
+      "roc_auc": 0.9791276717342894,
+      "pr_auc": 0.6654161144009996,
+      "tpr": 0.8514357053682896,
+      "fpr": 0.04656517160756037,
+      "tp": 682,
+      "fp": 2609,
+      "tn": 53420,
+      "fn": 119,
+      "ece_15_bins": 0.11825434408725335,
+      "brier": 0.0388563804670376,
+      "n_samples": 56830,
+      "positive_rate": 0.01409466830899173
+    }
+  },
+  "val_timepoint_calibrated": {
+    "threshold": 0.4262541806020067,
+    "accuracy": 0.9877368627517866,
+    "roc_auc": 0.9828165019256824,
+    "pr_auc": 0.6314687850456044,
+    "tpr": 0.4716636197440585,
+    "fpr": 0.0024505970071432297,
+    "tp": 516,
+    "fp": 141,
+    "tn": 57396,
+    "fn": 578,
+    "ece_15_bins": 5.843325203957147e-09,
+    "brier": 0.009865960848482472,
+    "n_samples": 58631,
+    "positive_rate": 0.018659071139840697
+  },
+  "test_timepoint_calibrated": {
+    "threshold": 0.4262541806020067,
+    "accuracy": 0.9910082702797818,
+    "roc_auc": 0.9784932691245654,
+    "pr_auc": 0.6373933751517469,
+    "tpr": 0.5480649188514357,
+    "fpr": 0.0026593371289867747,
+    "tp": 439,
+    "fp": 149,
+    "tn": 55880,
+    "fn": 362,
+    "ece_15_bins": 0.003659046587310161,
+    "brier": 0.00758553081262366,
+    "n_samples": 56830,
+    "positive_rate": 0.01409466830899173
+  },
+  "test_shot_policy": {
+    "shot_accuracy": 0.953757225433526,
+    "shot_tpr": 0.8421052631578947,
+    "shot_fpr": 0.014814814814814815,
+    "shot_tp": 32,
+    "shot_fp": 2,
+    "shot_tn": 133,
+    "shot_fn": 6,
+    "lead_time_ms_median": 7.040537134228401,
+    "lead_time_ms_p25": 1.7580685517578445,
+    "lead_time_ms_p75": 26.71029544095093,
+    "n_shots": 173
+  },
+  "calibration_val_delta": {
+    "before": {
+      "brier": 0.038083928739458726,
+      "ece_15_bins": 0.1150760500968078
+    },
+    "after": {
+      "brier": 0.009865960848482472,
+      "ece_15_bins": 5.843325203957147e-09
+    }
+  },
+  "threshold_policy": {
+    "objective": "accuracy",
+    "theta": 0.4262541806020067,
+    "sustain_ms": 3.0,
+    "selection_diag": {
+      "accuracy": 0.9877368627517866,
+      "tpr": 0.4716636197440585,
+      "fpr": 0.0024505970071432297,
+      "objective": "accuracy"
+    }
+  },
+  "shap_topk": [
+    {
+      "feature": "Mir_avg_fre",
+      "mean_abs_shap": 0.10261902958154678,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "locked_mode"
+    },
+    {
+      "feature": "v_loop",
+      "mean_abs_shap": 0.08366765826940536,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,vde_control_loss,impurity_radiation_collapse"
+    },
+    {
+      "feature": "sxr_var",
+      "mean_abs_shap": 0.08284246921539307,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "xuv_ratio",
+      "mean_abs_shap": 0.07211247831583023,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "mode_number_n",
+      "mean_abs_shap": 0.07082489132881165,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "locked_mode,low_q_current_limit"
+    },
+    {
+      "feature": "sxr_kurt",
+      "mean_abs_shap": 0.06419979780912399,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "Z_proxy",
+      "mean_abs_shap": 0.05916033685207367,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "vde_control_loss"
+    },
+    {
+      "feature": "dy_a",
+      "mean_abs_shap": 0.04808298125863075,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "vde_control_loss"
+    },
+    {
+      "feature": "sxr_mean",
+      "mean_abs_shap": 0.04798426479101181,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "qa_proxy",
+      "mean_abs_shap": 0.04786641150712967,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "low_q_current_limit"
+    },
+    {
+      "feature": "MNM",
+      "mean_abs_shap": 0.04548286274075508,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "locked_mode"
+    },
+    {
+      "feature": "dx_a",
+      "mean_abs_shap": 0.03652994707226753,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "vde_control_loss"
+    }
+  ]
+}

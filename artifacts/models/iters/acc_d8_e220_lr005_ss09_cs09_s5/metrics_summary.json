@@ -1,0 +1,280 @@
+{
+  "generated_at_utc": "2026-02-19T13:13:13.974920+00:00",
+  "selected_model": "xgb_dart",
+  "shap_source": "xgb_dart_gain_fallback_no_shap",
+  "target_accuracy": 0.98,
+  "target_accuracy_achieved": true,
+  "feature_policy": {
+    "mode": "use_all_required_features",
+    "use_all_by_default": true,
+    "expected_feature_count": 23,
+    "selected_feature_count": 23
+  },
+  "split_shot_counts": {
+    "train": 1386,
+    "val": 174,
+    "test": 173
+  },
+  "plotting": {
+    "plot_all_test_shots": false,
+    "plot_shot_limit": 0,
+    "test_shot_count": 173,
+    "generated_timeline_png": 0
+  },
+  "artifact_file_counts": {
+    "probability_timeline_png": 0,
+    "report_plot_png_total": 2
+  },
+  "baselines_val_raw": {
+    "logreg": {
+      "threshold": 0.5,
+      "accuracy": 0.8428305845030786,
+      "roc_auc": 0.9278329255041959,
+      "pr_auc": 0.4208553023620879,
+      "tpr": 0.8647166361974405,
+      "fpr": 0.1575855536437423,
+      "tp": 946,
+      "fp": 9067,
+      "tn": 48470,
+      "fn": 148,
+      "ece_15_bins": 0.2304979864961318,
+      "brier": 0.11838685043922248,
+      "n_samples": 58631,
+      "positive_rate": 0.018659071139840697
+    },
+    "xgb_gbtree": {
+      "threshold": 0.5,
+      "accuracy": 0.9884702631713599,
+      "roc_auc": 0.9735431828796344,
+      "pr_auc": 0.7600771885124714,
+      "tpr": 0.6928702010968921,
+      "fpr": 0.00590924101013261,
+      "tp": 758,
+      "fp": 340,
+      "tn": 57197,
+      "fn": 336,
+      "ece_15_bins": 0.006706095472929852,
+      "brier": 0.009088371137778545,
+      "n_samples": 58631,
+      "positive_rate": 0.018659071139840697
+    },
+    "xgb_dart": {
+      "threshold": 0.5,
+      "accuracy": 0.9858777779672869,
+      "roc_auc": 0.9745468292416494,
+      "pr_auc": 0.7589601003353295,
+      "tpr": 0.7321755027422303,
+      "fpr": 0.009298364530649843,
+      "tp": 801,
+      "fp": 535,
+      "tn": 57002,
+      "fn": 293,
+      "ece_15_bins": 0.019630790761434105,
+      "brier": 0.010985568343404646,
+      "n_samples": 58631,
+      "positive_rate": 0.018659071139840697
+    }
+  },
+  "baselines_test_raw": {
+    "logreg": {
+      "threshold": 0.5,
+      "accuracy": 0.8680978356501847,
+      "roc_auc": 0.8958854885853766,
+      "pr_auc": 0.23660560314315646,
+      "tpr": 0.7303370786516854,
+      "fpr": 0.12993271341626658,
+      "tp": 585,
+      "fp": 7280,
+      "tn": 48749,
+      "fn": 216,
+      "ece_15_bins": 0.2181710424136344,
+      "brier": 0.10187355842449977,
+      "n_samples": 56830,
+      "positive_rate": 0.01409466830899173
+    },
+    "xgb_gbtree": {
+      "threshold": 0.5,
+      "accuracy": 0.991201830019356,
+      "roc_auc": 0.9820547385072056,
+      "pr_auc": 0.7866951088330268,
+      "tpr": 0.7465667915106118,
+      "fpr": 0.005300826357779008,
+      "tp": 598,
+      "fp": 297,
+      "tn": 55732,
+      "fn": 203,
+      "ece_15_bins": 0.010243052511099714,
+      "brier": 0.007597827149528822,
+      "n_samples": 56830,
+      "positive_rate": 0.01409466830899173
+    },
+    "xgb_dart": {
+      "threshold": 0.5,
+      "accuracy": 0.9883688192855886,
+      "roc_auc": 0.9815201593592437,
+      "pr_auc": 0.7705337146373331,
+      "tpr": 0.7827715355805244,
+      "fpr": 0.008691927394742009,
+      "tp": 627,
+      "fp": 487,
+      "tn": 55542,
+      "fn": 174,
+      "ece_15_bins": 0.024269570975853295,
+      "brier": 0.01040879684881634,
+      "n_samples": 56830,
+      "positive_rate": 0.01409466830899173
+    }
+  },
+  "val_timepoint_calibrated": {
+    "threshold": 0.4262541806020067,
+    "accuracy": 0.9907557435486347,
+    "roc_auc": 0.9765096549111916,
+    "pr_auc": 0.7458340841822766,
+    "tpr": 0.6252285191956124,
+    "fpr": 0.0022941759215808957,
+    "tp": 684,
+    "fp": 132,
+    "tn": 57405,
+    "fn": 410,
+    "ece_15_bins": 1.0289778459272675e-09,
+    "brier": 0.0077494357817371445,
+    "n_samples": 58631,
+    "positive_rate": 0.018659071139840697
+  },
+  "test_timepoint_calibrated": {
+    "threshold": 0.4262541806020067,
+    "accuracy": 0.9921520323772656,
+    "roc_auc": 0.9813060402619662,
+    "pr_auc": 0.7506929733755672,
+    "tpr": 0.6666666666666666,
+    "fpr": 0.003194774134823038,
+    "tp": 534,
+    "fp": 179,
+    "tn": 55850,
+    "fn": 267,
+    "ece_15_bins": 0.004468592856386949,
+    "brier": 0.006248040715459909,
+    "n_samples": 56830,
+    "positive_rate": 0.01409466830899173
+  },
+  "test_shot_policy": {
+    "shot_accuracy": 0.9364161849710982,
+    "shot_tpr": 0.7368421052631579,
+    "shot_fpr": 0.007407407407407408,
+    "shot_tp": 28,
+    "shot_fp": 1,
+    "shot_tn": 134,
+    "shot_fn": 10,
+    "lead_time_ms_median": 7.039632917419169,
+    "lead_time_ms_p25": 2.759948835629828,
+    "lead_time_ms_p75": 13.544906091104536,
+    "n_shots": 173
+  },
+  "calibration_val_delta": {
+    "before": {
+      "brier": 0.010985568343404646,
+      "ece_15_bins": 0.019630790761434105
+    },
+    "after": {
+      "brier": 0.0077494357817371445,
+      "ece_15_bins": 1.0289778459272675e-09
+    }
+  },
+  "threshold_policy": {
+    "objective": "accuracy",
+    "theta": 0.4262541806020067,
+    "sustain_ms": 5.0,
+    "selection_diag": {
+      "accuracy": 0.9907557435486347,
+      "tpr": 0.6252285191956124,
+      "fpr": 0.0022941759215808957,
+      "objective": "accuracy"
+    }
+  },
+  "shap_topk": [
+    {
+      "feature": "Mir_avg_fre",
+      "mean_abs_shap": 0.15413807332515717,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "locked_mode"
+    },
+    {
+      "feature": "v_loop",
+      "mean_abs_shap": 0.11005456000566483,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,vde_control_loss,impurity_radiation_collapse"
+    },
+    {
+      "feature": "mode_number_n",
+      "mean_abs_shap": 0.08214861899614334,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "locked_mode,low_q_current_limit"
+    },
+    {
+      "feature": "sxr_var",
+      "mean_abs_shap": 0.077154241502285,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "sxr_kurt",
+      "mean_abs_shap": 0.059906963258981705,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "qa_proxy",
+      "mean_abs_shap": 0.058281708508729935,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "low_q_current_limit"
+    },
+    {
+      "feature": "Z_proxy",
+      "mean_abs_shap": 0.05040603503584862,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "vde_control_loss"
+    },
+    {
+      "feature": "MNM",
+      "mean_abs_shap": 0.04772501811385155,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "locked_mode"
+    },
+    {
+      "feature": "xuv_ratio",
+      "mean_abs_shap": 0.04605372995138168,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "dy_a",
+      "mean_abs_shap": 0.032378025352954865,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "vde_control_loss"
+    },
+    {
+      "feature": "xuv_var",
+      "mean_abs_shap": 0.028252581134438515,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit,impurity_radiation_collapse"
+    },
+    {
+      "feature": "ne_nG",
+      "mean_abs_shap": 0.027867745608091354,
+      "corr_feature_shap": NaN,
+      "direction_hint": "not_available_without_shap",
+      "mechanism_tags": "density_limit"
+    }
+  ]
+}
