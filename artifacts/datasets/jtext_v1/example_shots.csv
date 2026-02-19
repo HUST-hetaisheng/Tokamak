@@ -1,0 +1,4 @@
+role,shot_id,label,has_advanced_time,fls_source,plot_path
+disrupt_with_advanced,1051501,1,1,advanced_time,D:\Fuison\reports\plots\data_audit\shot_1051501_disrupt_with_advanced.png
+disrupt_without_advanced,1053639,1,0,fallback_25ms,D:\Fuison\reports\plots\data_audit\shot_1053639_disrupt_without_advanced.png
+non_disruptive,1051500,0,0,non_disruptive,D:\Fuison\reports\plots\data_audit\shot_1051500_non_disruptive.png

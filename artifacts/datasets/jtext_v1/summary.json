@@ -1,0 +1,139 @@
+{
+  "generated_at_utc": "2026-02-19T11:53:09.692237+00:00",
+  "discovered_paths": {
+    "checked_in_order": [
+      "D:\\Fuison\\data\\J-TEXT\\unified_hdf5"
+    ],
+    "selected_hdf5_root": "D:\\Fuison\\data\\J-TEXT\\unified_hdf5",
+    "repo_search_hits": [],
+    "disruption_shot_list": "D:\\Fuison\\shot_list\\J-TEXT\\Disruption_J-TEXT.json",
+    "nondisruption_shot_list": "D:\\Fuison\\shot_list\\J-TEXT\\Non-disruption_J-TEXT.json",
+    "advanced_time_json": "D:\\Fuison\\shot_list\\J-TEXT\\AdvancedTime_J-TEXT.json"
+  },
+  "shot_list_stats": {
+    "disruption_raw": 378,
+    "nondisruption_raw": 1356,
+    "disruption_duplicates": 0,
+    "nondisruption_duplicates": 0,
+    "cross_conflicts": 0,
+    "usable_after_dedup_conflict": 1734
+  },
+  "cleaning_stats": {
+    "clean_shots": 1733,
+    "excluded_shots": 1,
+    "excluded_reason_counts": {
+      "missing_hdf5": 1
+    },
+    "clean_disruptive": 378,
+    "clean_nondisruptive": 1355,
+    "disruptive_with_advanced": 375,
+    "disruptive_without_advanced": 3,
+    "length_reconciled_count": 0,
+    "fls_source_counts": {
+      "advanced_time": 375,
+      "fallback_25ms": 3,
+      "non_disruptive": 1355
+    },
+    "time_source_counts": {
+      "meta_start_down": 1733
+    },
+    "raw_points_total": 592175,
+    "used_points_total": 580954,
+    "positive_points_total": 7654,
+    "negative_points_total": 573300,
+    "gray_points_total": 11221
+  },
+  "split_ratio": {
+    "train": 8,
+    "val": 1,
+    "test": 1
+  },
+  "splits": {
+    "train": {
+      "shots": 1386,
+      "disruptive_shots": 302,
+      "nondisruptive_shots": 1084,
+      "raw_points": 474461,
+      "used_points": 465493,
+      "positive_points": 5759,
+      "negative_points": 459734,
+      "gray_points": 8968
+    },
+    "val": {
+      "shots": 174,
+      "disruptive_shots": 38,
+      "nondisruptive_shots": 136,
+      "raw_points": 59753,
+      "used_points": 58631,
+      "positive_points": 1094,
+      "negative_points": 57537,
+      "gray_points": 1122
+    },
+    "test": {
+      "shots": 173,
+      "disruptive_shots": 38,
+      "nondisruptive_shots": 135,
+      "raw_points": 57961,
+      "used_points": 56830,
+      "positive_points": 801,
+      "negative_points": 56029,
+      "gray_points": 1131
+    }
+  },
+  "class_imbalance": {
+    "implemented_method": "class_weighting",
+    "shot_level_weights": {
+      "disruptive": 2.294701986754967,
+      "nondisruptive": 0.6392988929889298
+    },
+    "point_level": {
+      "positive_points": 5759,
+      "negative_points": 459734,
+      "bce_pos_weight": 79.82878972043757
+    },
+    "considered_alternatives": [
+      "weighted_random_sampler",
+      "focal_loss_or_hard_negative_mining"
+    ]
+  },
+  "required_features_count": 23,
+  "examples": [
+    {
+      "role": "disrupt_with_advanced",
+      "shot_id": 1051501,
+      "label": 1,
+      "has_advanced_time": 1,
+      "fls_source": "advanced_time",
+      "plot_path": "D:\\Fuison\\reports\\plots\\data_audit\\shot_1051501_disrupt_with_advanced.png"
+    },
+    {
+      "role": "disrupt_without_advanced",
+      "shot_id": 1053639,
+      "label": 1,
+      "has_advanced_time": 0,
+      "fls_source": "fallback_25ms",
+      "plot_path": "D:\\Fuison\\reports\\plots\\data_audit\\shot_1053639_disrupt_without_advanced.png"
+    },
+    {
+      "role": "non_disruptive",
+      "shot_id": 1051500,
+      "label": 0,
+      "has_advanced_time": 0,
+      "fls_source": "non_disruptive",
+      "plot_path": "D:\\Fuison\\reports\\plots\\data_audit\\shot_1051500_non_disruptive.png"
+    }
+  ],
+  "artifacts": {
+    "clean_shots_csv": "D:\\Fuison\\artifacts\\datasets\\jtext_v1\\clean_shots.csv",
+    "excluded_shots_csv": "D:\\Fuison\\artifacts\\datasets\\jtext_v1\\excluded_shots.csv",
+    "label_examples_csv": "D:\\Fuison\\artifacts\\datasets\\jtext_v1\\label_examples.csv",
+    "example_shots_csv": "D:\\Fuison\\artifacts\\datasets\\jtext_v1\\example_shots.csv",
+    "class_weights_json": "D:\\Fuison\\artifacts\\datasets\\jtext_v1\\class_weights.json",
+    "required_features_json": "D:\\Fuison\\artifacts\\datasets\\jtext_v1\\required_features.json",
+    "summary_json": "D:\\Fuison\\artifacts\\datasets\\jtext_v1\\summary.json",
+    "train_txt": "D:\\Fuison\\splits\\train.txt",
+    "val_txt": "D:\\Fuison\\splits\\val.txt",
+    "test_txt": "D:\\Fuison\\splits\\test.txt",
+    "plot_dir": "D:\\Fuison\\reports\\plots\\data_audit"
+  }
+}

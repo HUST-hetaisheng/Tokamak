@@ -1,0 +1,16 @@
+{
+  "implemented_method": "class_weighting",
+  "shot_level_weights": {
+    "disruptive": 2.294701986754967,
+    "nondisruptive": 0.6392988929889298
+  },
+  "point_level": {
+    "positive_points": 5759,
+    "negative_points": 459734,
+    "bce_pos_weight": 79.82878972043757
+  },
+  "considered_alternatives": [
+    "weighted_random_sampler",
+    "focal_loss_or_hard_negative_mining"
+  ]
+}
