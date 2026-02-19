@@ -113,3 +113,41 @@ Artifacts:
 - `README.md`
 - `docs/changelog.md`
 - `docs/progress.md`
+
+## Agent-6 (Advanced Modeler)
+Status: completed
+Done:
+- Added `src/models/sequence_arch.py` with `TemporalTransformerClassifier`, `MambaLiteClassifier`, and `GRUClassifier`.
+- Added `src/models/train_advanced.py` with bounded advanced training sweep, calibration, shot-level thresholding, probability-timeline export, and gradient*input reasons.
+- Executed 3 fair-window runs (`window_size=128`, `stride=16`): transformer_small / mamba_lite / gru.
+- Best run: `adv_mamba_lite_ws128_st16_e5_s42` with test_acc=0.988993, roc_auc=0.990111, shot_acc=0.976879, shot_fpr=0.000000.
+Next:
+- Scale to larger window/horizon ablations and add cross-device transfer hooks on the same architecture backbone.
+Blockers:
+- None.
+Artifacts:
+- `src/models/sequence_arch.py`
+- `src/models/train_advanced.py`
+- `artifacts/models/iters/adv_transformer_small_ws128_st16_e5_s42/training_config.json`
+- `artifacts/models/iters/adv_transformer_small_ws128_st16_e5_s42/metrics_summary.json`
+- `artifacts/models/iters/adv_transformer_small_ws128_st16_e5_s42/warning_summary_test.csv`
+- `artifacts/models/iters/adv_transformer_small_ws128_st16_e5_s42/disruption_reason_per_shot.csv`
+- `reports/iters/adv_transformer_small_ws128_st16_e5_s42/metrics.md`
+- `reports/iters/adv_transformer_small_ws128_st16_e5_s42/plots/probability_timelines_test.csv`
+- `reports/iters/adv_transformer_small_ws128_st16_e5_s42/plots/probability`
+- `artifacts/models/iters/adv_mamba_lite_ws128_st16_e5_s42/training_config.json`
+- `artifacts/models/iters/adv_mamba_lite_ws128_st16_e5_s42/metrics_summary.json`
+- `artifacts/models/iters/adv_mamba_lite_ws128_st16_e5_s42/warning_summary_test.csv`
+- `artifacts/models/iters/adv_mamba_lite_ws128_st16_e5_s42/disruption_reason_per_shot.csv`
+- `reports/iters/adv_mamba_lite_ws128_st16_e5_s42/metrics.md`
+- `reports/iters/adv_mamba_lite_ws128_st16_e5_s42/plots/probability_timelines_test.csv`
+- `reports/iters/adv_mamba_lite_ws128_st16_e5_s42/plots/probability`
+- `artifacts/models/iters/adv_gru_ws128_st16_e5_s42/training_config.json`
+- `artifacts/models/iters/adv_gru_ws128_st16_e5_s42/metrics_summary.json`
+- `artifacts/models/iters/adv_gru_ws128_st16_e5_s42/warning_summary_test.csv`
+- `artifacts/models/iters/adv_gru_ws128_st16_e5_s42/disruption_reason_per_shot.csv`
+- `reports/iters/adv_gru_ws128_st16_e5_s42/metrics.md`
+- `reports/iters/adv_gru_ws128_st16_e5_s42/plots/probability_timelines_test.csv`
+- `reports/iters/adv_gru_ws128_st16_e5_s42/plots/probability`
+- `reports/iters/advanced_summary.csv`
+- `reports/iters/advanced_summary.md`

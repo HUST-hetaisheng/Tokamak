@@ -1,0 +1,89 @@
+{
+  "generated_at_utc": "2026-02-19T16:00:07.120953+00:00",
+  "run_name": "adv_transformer_small_ws128_st16_e5_s42",
+  "model_name": "transformer_small",
+  "window_size": 128,
+  "stride": 16,
+  "val_timepoint_calibrated": {
+    "threshold": 0.8261204013377926,
+    "accuracy": 0.9788897576231431,
+    "roc_auc": 0.8588976812661023,
+    "pr_auc": 0.5795171155549106,
+    "tpr": 0.4090909090909091,
+    "fpr": 0.0008097165991902834,
+    "tp": 18,
+    "fp": 1,
+    "tn": 1234,
+    "fn": 26,
+    "ece_15_bins": 0.021744835648197465,
+    "brier": 0.022668399310532727,
+    "n_samples": 1279,
+    "positive_rate": 0.03440187646598905
+  },
+  "test_timepoint_calibrated": {
+    "threshold": 0.8261204013377926,
+    "accuracy": 0.9869547492865879,
+    "roc_auc": 0.9774040697030756,
+    "pr_auc": 0.8793649460676967,
+    "tpr": 0.5921052631578947,
+    "fpr": 0.00042069835927639884,
+    "tp": 45,
+    "fp": 1,
+    "tn": 2376,
+    "fn": 31,
+    "ece_15_bins": 0.0063983409918977555,
+    "brier": 0.006961856383992514,
+    "n_samples": 2453,
+    "positive_rate": 0.030982470444353854
+  },
+  "test_shot_policy": {
+    "shot_accuracy": 0.9595375722543352,
+    "shot_tpr": 0.8421052631578947,
+    "shot_fpr": 0.007407407407407408,
+    "shot_tp": 32,
+    "shot_fp": 1,
+    "shot_tn": 134,
+    "shot_fn": 6,
+    "lead_time_ms_median": 0.0,
+    "lead_time_ms_p25": -0.0,
+    "lead_time_ms_p75": 1.2582771510942763,
+    "n_shots": 173
+  },
+  "threshold_policy": {
+    "objective": "shot_fpr_constrained",
+    "max_shot_fpr": 0.02,
+    "theta": 0.8261204013377926,
+    "sustain_ms": 3.0,
+    "selection_diag": {
+      "shot_tpr": 0.7894736842105263,
+      "shot_fpr": 0.014705882352941176,
+      "shot_accuracy": 0.9425287356321839,
+      "lead_time_ms_median": 0.0,
+      "max_shot_fpr": 0.02,
+      "feasible_found": 1.0,
+      "feasible_threshold_count": 51.0,
+      "objective": "shot_fpr_constrained"
+    }
+  },
+  "calibration_delta_val_threshold": {
+    "before": {
+      "brier": 0.05346069273166623,
+      "ece_15_bins": 0.0857226678255229
+    },
+    "after": {
+      "brier": 0.022668399310532727,
+      "ece_15_bins": 0.021744835648197465
+    }
+  },
+  "reason_summary": {
+    "reason_top_k": 3,
+    "reason_rows": 38,
+    "disruptive_shots_test": 38
+  },
+  "plotting": {
+    "plot_all_test_shots": true,
+    "plot_shot_limit": 0,
+    "test_shot_count": 173,
+    "generated_timeline_png": 173
+  }
+}
