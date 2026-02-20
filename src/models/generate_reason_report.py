@@ -33,7 +33,7 @@ def _fmt_float(v: Any, digits: int = 6) -> str:
 
 def _fmt_bool01(v: Any) -> str:
     try:
-        return "Yes" if int(v) == 1 else "No"
+        return "是" if int(v) == 1 else "否"
     except Exception:
         return "N/A"
 
@@ -64,26 +64,26 @@ def build_report(
 
     rows_total = int(len(reason_df))
     if rows_total == 0:
-        lines.append("No disruptive-shot reason rows were found.")
+        lines.append("未找到破裂炮原因行。")
         lines.append("")
         return "\n".join(lines) + "\n"
 
-    lines.append(f"- Reason rows: `{rows_total}`")
+    lines.append(f"- 原因行数: `{rows_total}`")
     if metrics:
         test = metrics.get("test_timepoint_calibrated", {})
         shot = metrics.get("test_shot_policy", {})
         th = metrics.get("threshold_policy", {})
-        lines.append(f"- Test accuracy: `{_fmt_float(test.get('accuracy'), 6)}`")
-        lines.append(f"- Test ROC-AUC: `{_fmt_float(test.get('roc_auc'), 6)}`")
-        lines.append(f"- Shot accuracy: `{_fmt_float(shot.get('shot_accuracy'), 6)}`")
-        lines.append(f"- Shot TPR/FPR: `{_fmt_float(shot.get('shot_tpr'), 6)}` / `{_fmt_float(shot.get('shot_fpr'), 6)}`")
-        lines.append(f"- Threshold objective/theta: `{th.get('objective', 'N/A')}` / `{_fmt_float(th.get('theta'), 6)}`")
+        lines.append(f"- 测试准确率: `{_fmt_float(test.get('accuracy'), 6)}`")
+        lines.append(f"- 测试 ROC-AUC: `{_fmt_float(test.get('roc_auc'), 6)}`")
+        lines.append(f"- 炮级准确率: `{_fmt_float(shot.get('shot_accuracy'), 6)}`")
+        lines.append(f"- 炮级 TPR（真阳性率）/ FPR（假阳性率）: `{_fmt_float(shot.get('shot_tpr'), 6)}` / `{_fmt_float(shot.get('shot_fpr'), 6)}`")
+        lines.append(f"- 阈值策略/theta: `{th.get('objective', 'N/A')}` / `{_fmt_float(th.get('theta'), 6)}`")
     lines.append("")
 
     dist = reason_df["primary_mechanism"].fillna("unmapped").value_counts()
-    lines.append("## Mechanism Distribution")
+    lines.append("## 破裂机制分布")
     lines.append("")
-    lines.append("| mechanism | count |")
+    lines.append("| 机制 | 计数 |")
     lines.append("|---|---:|")
     for mech, cnt in dist.items():
         lines.append(f"| {mech} | {int(cnt)} |")
@@ -93,20 +93,20 @@ def build_report(
     if "shot_id" in sort_df.columns:
         sort_df = sort_df.sort_values("shot_id")
 
-    lines.append("## Shot Explanations")
+    lines.append("## 单炮详细分析")
     lines.append("")
     for _, row in sort_df.iterrows():
         sid = row.get("shot_id", "N/A")
-        lines.append(f"### Shot {sid}")
+        lines.append(f"### 炮号 {sid}")
         lines.append("")
-        lines.append(f"- Primary mechanism: `{row.get('primary_mechanism', 'N/A')}`")
-        lines.append(f"- Primary mechanism score: `{_fmt_float(row.get('primary_mechanism_score'), 6)}`")
-        lines.append(f"- Warning triggered: `{_fmt_bool01(row.get('warning'))}`")
-        lines.append(f"- Lead time (ms): `{_fmt_float(row.get('lead_time_ms'), 3)}`")
-        lines.append(f"- Reason window rule: `{row.get('reason_window_rule', 'N/A')}`")
-        lines.append(f"- Reason window points: `{int(row.get('reason_window_points', 0))}`")
+        lines.append(f"- 主要机制: `{row.get('primary_mechanism', 'N/A')}`")
+        lines.append(f"- 机制评分: `{_fmt_float(row.get('primary_mechanism_score'), 6)}`")
+        lines.append(f"- 是否触发警报: `{_fmt_bool01(row.get('warning'))}`")
+        lines.append(f"- 提前量 (ms): `{_fmt_float(row.get('lead_time_ms'), 3)}`")
+        lines.append(f"- 原因窗口规则: `{row.get('reason_window_rule', 'N/A')}`")
+        lines.append(f"- 原因窗口数据点数: `{int(row.get('reason_window_points', 0))}`")
         lines.append("")
-        lines.append("Evidence:")
+        lines.append("证据:")
         top_json = _parse_top_features_json(row.get("top_features_json"))
         if top_json:
             for item in top_json:
@@ -114,7 +114,7 @@ def build_report(
                 feat = item.get("feature", "N/A")
                 contrib = _fmt_float(item.get("contribution"), 6)
                 tags = item.get("mechanism_tags", "unmapped")
-                lines.append(f"{rank}. `{feat}` (contribution `{contrib}`), tags: `{tags}`")
+                lines.append(f"{rank}. `{feat}` (贡献度 `{contrib}`), 标签: `{tags}`")
         else:
             for rank in [1, 2, 3]:
                 feat = row.get(f"top{rank}_feature")
@@ -122,7 +122,7 @@ def build_report(
                     continue
                 contrib = _fmt_float(row.get(f"top{rank}_contribution"), 6)
                 tags = row.get(f"top{rank}_mechanism_tags", "unmapped")
-                lines.append(f"{rank}. `{feat}` (contribution `{contrib}`), tags: `{tags}`")
+                lines.append(f"{rank}. `{feat}` (贡献度 `{contrib}`), 标签: `{tags}`")
         lines.append("")
 
     return "\n".join(lines) + "\n"

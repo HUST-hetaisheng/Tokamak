@@ -1,9 +1,9 @@
-# Iteration Summary (J-TEXT DART Sweep)
+# 迭代汇总 (J-TEXT DART 扫描)
 
-- Total runs: 7
-- Recommended run (current): `sfpr002_d4_e260_lr004_s3_reason`
+- 总运行数：7
+- 当前推荐运行：`sfpr002_d4_e260_lr004_s3_reason`
 
-| run_id | objective | max_shot_fpr | sustain_ms | test_acc | test_auc | shot_acc | shot_tpr | shot_fpr | lead_time_ms_median | reason_rows |
+| run_id | objective（目标） | max_shot_fpr | sustain_ms | test_acc | test_auc | shot_acc | shot_tpr | shot_fpr | lead_time_ms_median | reason_rows |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | sfpr002_d4_e260_lr004_s3_reason | shot_fpr_constrained | 0.0200 | 3.0 | 0.990885 | 0.978437 | 0.953757 | 0.842105 | 0.014815 | 7.093 | 38 |
 | sfpr001_d4_e260_lr004_s3_reason | shot_fpr_constrained | 0.0100 | 3.0 | 0.987577 | 0.978437 | 0.809249 | 0.131579 | 0.000000 | 6.023 | 38 |

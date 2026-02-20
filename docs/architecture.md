@@ -1,66 +1,66 @@
-# Architecture: PGFE / (S-)CORAL / DART / SHAP / EAST Transfer
+# 架构设计：PGFE（物理引导特征工程） / (S-)CORAL（子空间相关对齐） / DART（丢弃正则化树） / SHAP（可解释性归因） / EAST 迁移
 
-## 1. Engineering Goal
+## 1. 工程目标
 
-Build a real-time disruption predictor that outputs:
-- disruption probability over time,
-- trigger-ready warning signal,
-- transfer-ready interfaces for EAST-first and later cross-device extension.
+构建一个实时破裂预测器，输出：
+- 随时间变化的破裂概率,
+- 可触发的预警信号,
+- 面向 EAST 优先、后续可扩展至跨装置的迁移接口。
 
-This mapping follows paper_131 as the primary prior.
+本映射以 paper_131 为首要先验依据。
 
-## 2. Research-to-Engineering Mapping
+## 2. 研究-工程映射
 
-| Research block | Engineering mapping | Current hook in repo | Status |
+| 研究模块 | 工程映射 | 仓库中的当前挂接点 | 状态 |
 |---|---|---|---|
-| PGFE / PGFE-U | Feature channel contract + temporal derivatives + physics-prior scaling | `train_east_realtime_sequence` supports base keys, `--add-diff`, `--add-abs-diff`, `--use-paper131-prior` | Active |
-| FLS + gray zone | Dynamic/advanced labeling with uncertain interval excluded from supervised loss | `--uncertain-ms`; per-point `valid_label` in `sequence_predictions/*.csv` | Active (MVP-compatible) |
-| CORAL / S-CORAL | Domain alignment loss on latent features (source-target covariance alignment) | Interface hook after encoder features, before classifier head | Placeholder (to be implemented) |
-| DART classifier | Tree-based interpretable baseline (`booster='dart'`) for tabular PGFE features | Baseline entry currently `train_fusion_baseline` (RandomForest); DART adapter pending | Placeholder (planned) |
-| Probability calibration | Post-hoc calibration on validation probabilities | MVP command in README saves `calibration/isotonic.joblib` | Active (runbook placeholder) |
-| SHAP explainability | Global + shot-level feature attribution for calibrated model | Output contract reserved under run dir (`explainability/`) | Placeholder (planned) |
+| PGFE / PGFE-U | 特征通道契约 + 时间导数 + 物理先验缩放 | `train_east_realtime_sequence` 支持基础特征键、`--add-diff`、`--add-abs-diff`、`--use-paper131-prior` | 活跃 |
+| FLS（灵活标注策略） + 灰区 | 动态/高级标注，排除不确定区间的监督损失 | `--uncertain-ms`；`sequence_predictions/*.csv` 中的逐点 `valid_label` | 活跃（MVP 兼容） |
+| CORAL / S-CORAL | 潜在特征上的域对齐损失（源-目标协方差对齐） | 编码器特征之后、分类器头之前的接口挂接点 | 占位（待实现） |
+| DART 分类器 | 基于树的可解释基线（`booster='dart'`），用于表格 PGFE 特征 | 当前基线入口为 `train_fusion_baseline`（RandomForest）；DART 适配器待定 | 占位（已规划） |
+| 概率校准 | 验证集概率的后处理校准 | README 中的 MVP 命令保存 `calibration/isotonic.joblib` | 活跃（运行手册占位符） |
+| SHAP 可解释性 | 全局 + 炮级特征归因，用于校准模型 | 运行目录下预留输出契约（`explainability/`） | 占位（已规划） |
 
-## 3. Dataflow (Current + Planned)
+## 3. 数据流 (当前 + 规划)
 
-1. HDF5 shot data (`unified_hdf5`) + shot lists (`Disruption`, `Non-disruption`, `AdvancedTime`).
-2. Feature assembly (PGFE channel set + optional diffs + prior scaling).
-3. Labeling with gray-zone exclusion (`valid_label=0` excluded from loss/metrics).
-4. Sequence model training and TEST evaluation.
-5. Sequence probability export (`sequence_predictions/val|test/*.csv`).
-6. Calibration stage on val predictions.
-7. Probability curve plotting and trigger policy checks.
-8. SHAP reporting (DART path) as explainability artifact.
+1. HDF5 炮号数据 (`unified_hdf5`) + 炮号列表 (`Disruption`、`Non-disruption`、`AdvancedTime`)。
+2. 特征组装 (PGFE 通道集 + 可选差分 + 先验缩放)。
+3. 带灰区排除的标注 (`valid_label=0` 的点排除在损失/指标之外)。
+4. 序列模型训练与 TEST 评估。
+5. 序列概率导出 (`sequence_predictions/val|test/*.csv`)。
+6. 验证集预测的校准阶段。
+7. 概率曲线绘图与触发策略检查。
+8. SHAP 报告（DART 路径）作为可解释性产物。
 
-## 4. EAST Transfer Hooks
+## 4. EAST 迁移挂接点
 
-Transfer-ready interfaces are defined as contracts, not hardcoded device logic:
+迁移接口定义为契约，而非硬编码的装置逻辑：
 - `shot_list/<device>/Disruption_<device>_TV.json`
 - `shot_list/<device>/Non-disruption_<device>_TV.json`
 - `shot_list/<device>/AdvancedTime_<device>.json`
 - `<data_root>/<device>/unified_hdf5/<bucket>/<shot>.hdf5`
 
-Required hooks for cross-device training:
-- separate source and target loaders with identical feature schema,
-- domain-adaptation insertion point (CORAL/S-CORAL loss),
-- calibration per target domain,
-- explainability export with device tag.
+跨装置训练所需的挂接点：
+- 具有相同特征模式的独立源/目标数据加载器,
+- 域适配插入点 (CORAL/S-CORAL 损失),
+- 每个目标域的校准,
+- 带装置标签的可解释性导出。
 
-## 5. Decision Record (This Cycle)
+## 5. 决策记录 (本周期)
 
-### Why FLS + gray-zone labeling
+### 为何选择 FLS + 灰区标注
 
-- Fixed windows create label noise near pre-disruption transition.
-- Gray-zone exclusion keeps labels cleaner for both training and calibration.
-- The current `valid_label` pipeline already supports this behavior.
+- 固定窗口在破裂前过渡期产生标签噪声。
+- 灰区排除使训练和校准的标签更加干净。
+- 当前 `valid_label` 管线已支持此行为。
 
-### Why DART + calibration + SHAP
+### 为何选择 DART + 校准 + SHAP
 
-- DART is the paper_131-aligned interpretable tree baseline for tabular PGFE features.
-- Calibration is required because trigger policy depends on probability quality, not only ranking.
-- SHAP is required for operator-facing physical interpretability and feature audit.
+- DART 是 paper_131 对齐的可解释树基线，用于表格 PGFE 特征。
+- 校准是必须的，因为触发策略依赖概率质量而非仅排序。
+- SHAP 是实现面向操作人员的物理可解释性和特征审计所必需的。
 
-### Why transfer-ready EAST interface
+### 为何需要面向迁移的 EAST 接口
 
-- EAST is the immediate deployment target.
-- Cross-device extension (e.g., EAST -> J-TEXT or inverse) should reuse the same contracts.
-- Keeping loaders and adaptation hooks device-agnostic avoids rework in later migration stages.
+- EAST 是近期的部署目标。
+- 跨装置扩展（如 EAST -> J-TEXT 或反向）应复用相同的契约。
+- 保持数据加载器和适配挂接点与装置无关，可避免后续迁移阶段的返工。

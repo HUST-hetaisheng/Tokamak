@@ -1,22 +1,22 @@
-# Fuison: Tokamak Disruption Prediction (MVP Runbook)
+# Fuison: 托卡马克破裂预测 (MVP 运行手册)
 
-This repository targets real-time tokamak disruption prediction with paper_131-aligned decisions:
-- physics-guided feature pipeline (PGFE family),
-- gray-zone-aware labeling (FLS-compatible),
-- calibrated disruption probability output,
-- transfer-ready interfaces for EAST and later cross-device adaptation.
+本仓库面向实时托卡马克等离子体破裂预测，核心设计对齐 paper_131：
+- 物理引导特征管线 (PGFE（物理引导特征工程） 家族),
+- 灰区感知标注 (FLS（灵活标注策略） 兼容),
+- 校准后的破裂概率输出,
+- 面向 EAST 的迁移学习接口，后续可扩展至跨装置适配。
 
-## Data Path Configuration
+## 数据路径配置
 
-Default data root for this repo:
+本仓库的默认数据根目录：
 
 ```powershell
 $env:FUISON_DATA_ROOT = "G:\我的云端硬盘\Fuison\data"
 if (-not (Test-Path $env:FUISON_DATA_ROOT)) { throw "FUISON_DATA_ROOT not found: $env:FUISON_DATA_ROOT" }
 ```
 
-Current scripts expect shot lists in this repo and HDF5 under `data/EAST/unified_hdf5`.
-If you keep HDF5 only in cloud root, link once:
+当前脚本要求炮号列表位于本仓库内，HDF5 文件位于 `data/EAST/unified_hdf5`。
+如果 HDF5 仅存放在云端根目录，请创建一次链接：
 
 ```powershell
 if (-not (Test-Path "data/EAST/unified_hdf5")) {
@@ -24,7 +24,7 @@ if (-not (Test-Path "data/EAST/unified_hdf5")) {
 }
 ```
 
-## Environment
+## 环境搭建
 
 ```powershell
 py -3.14 -m venv .venv
@@ -32,9 +32,9 @@ py -3.14 -m venv .venv
 pip install numpy pandas h5py scikit-learn torch matplotlib joblib
 ```
 
-## Entry Points (Current Workspace)
+## 入口点 (当前工作区)
 
-Source `.py` entrypoints are not present yet for sequence training; use current compiled entrypoint:
+序列训练的 `.py` 入口尚未就绪；请使用当前已编译的入口：
 
 ```powershell
 if (Test-Path "analysis/train_east_realtime_sequence.py") {
@@ -44,9 +44,9 @@ if (Test-Path "analysis/train_east_realtime_sequence.py") {
 }
 ```
 
-## Reproducible Runbook
+## 可复现运行手册
 
-### 1) Build dataset catalog
+### 1) 构建数据集目录
 
 ```powershell
 py -3.14 data/EAST/build_east_shot_catalog.py `
@@ -55,7 +55,7 @@ py -3.14 data/EAST/build_east_shot_catalog.py `
   --output-dir data/EAST/exports
 ```
 
-### 2) Train + evaluate (TEST eval is part of `train`)
+### 2) 训练 + 评估 (TEST 评估已包含在 `train` 中)
 
 ```powershell
 $RUN_DIR = "analysis/outputs/realtime_hazard_gru_mvp"
@@ -70,10 +70,10 @@ py -3.14 $TRAIN_ENTRY train `
   --num-workers 0
 ```
 
-### 2b) Full-shot rerun (J-TEXT DART pipeline, no shot cap)
+### 2b) 全炮次重跑 (J-TEXT DART（丢弃正则化树）管线，不设炮数上限)
 
-Use the current modeling entrypoint and disable caps with `--max-*-shots 0`.  
-This is the command used in the relaunch stage:
+使用当前建模入口并以 `--max-*-shots 0` 取消上限。
+以下为重启阶段使用的命令：
 
 ```powershell
 python -m src.models.train `
@@ -85,9 +85,9 @@ python -m src.models.train `
   --threshold-objective accuracy
 ```
 
-### 2c) Recommended policy run (shot-level FAR constrained + per-shot reasons)
+### 2c) 推荐策略运行 (炮级误报率约束 + 单炮原因分析)
 
-This run separates validation shots into calibration/threshold subsets, then selects threshold under shot-level FAR constraint.
+本运行将验证集炮次拆分为校准/阈值子集，然后在炮级误报率约束下选取阈值。
 
 ```powershell
 python -m src.models.train `
@@ -110,15 +110,15 @@ python -m src.models.train `
   --report-dir reports/iters/sfpr002_d4_e260_lr004_s3_reason
 ```
 
-### 2d) Generate per-shot readable reason report (Markdown)
+### 2d) 生成单炮可读原因报告 (Markdown)
 
 ```powershell
 python -m src.models.generate_reason_report `
   --reason-csv artifacts/models/iters/sfpr002_d4_e260_lr004_s3_reason/disruption_reason_per_shot.csv `
-  --title "Per-Shot Disruption Reason Report (sfpr002)"
+  --title "单炮破裂原因报告 (sfpr002)"
 ```
 
-### 3) Streaming prediction on custom matrix
+### 3) 对自定义矩阵进行流式预测
 
 ```powershell
 py -3.14 $TRAIN_ENTRY predict `
@@ -127,9 +127,9 @@ py -3.14 $TRAIN_ENTRY predict `
   --output-csv analysis/outputs/realtime_predict.csv
 ```
 
-### 4) Calibration command (MVP placeholder linked to current artifacts)
+### 4) 校准命令 (MVP 占位符，关联当前产物)
 
-This calibrates val-set probabilities from `sequence_predictions/val/*.csv` and saves an isotonic model.
+对 `sequence_predictions/val/*.csv` 中的验证集概率进行校准，并保存等保回归模型。
 
 ```powershell
 @'
@@ -164,7 +164,7 @@ print("saved:", out_dir)
 '@ | py -3.14 -
 ```
 
-### 5) Probability-curve plotting command (per-shot)
+### 5) 概率曲线绘图命令 (单炮)
 
 ```powershell
 @'
@@ -189,31 +189,31 @@ print("saved:", out_png)
 '@ | py -3.14 -
 ```
 
-## PNG Count And 173-Shot Outputs
+## PNG 数量与 173 炮输出说明
 
-By default, only a few shot PNGs are exported because the trainer uses preview mode (`--plot-shot-limit 3`) unless `--plot-all-test-shots` is enabled.
+默认情况下仅导出少量炮号的 PNG，因为训练器使用预览模式 (`--plot-shot-limit 3`)，除非启用 `--plot-all-test-shots`。
 
-In the latest relaunch full-shot run, `--plot-all-test-shots` was enabled and `173` shot PNGs were generated in:
+在最新的全炮次重跑中，启用了 `--plot-all-test-shots`，共生成 `173` 张炮号 PNG 于：
 - `reports/plots/probability/`
 
-The full 173-shot artifacts are in CSV form:
-- Full per-timepoint timelines: `reports/plots/probability_timelines_test.csv` (173 unique `shot_id`).
-- Full per-shot warning summary: `artifacts/models/best/warning_summary_test.csv` (173 rows).
+完整的 173 炮产物以 CSV 形式保存：
+- 完整逐时间点时间线：`reports/plots/probability_timelines_test.csv`（173 个唯一 `shot_id`）。
+- 完整炮级预警汇总：`artifacts/models/best/warning_summary_test.csv`（173 行）。
 
-## Artifact Guide
+## 产物指南
 
-| Path | Role | When to read |
+| 路径 | 角色 | 何时查阅 |
 |---|---|---|
-| `ref/paper_131.txt` | Core prior-knowledge reference for mechanism, feature, and labeling choices. | Before changing feature set, label strategy, or evaluation policy. |
-| `data/EAST/exports/east_shot_catalog_summary.json` | EAST catalog availability and usability summary. | Before launching training to verify data coverage. |
-| `analysis/outputs/<run_name>/metrics_summary.json` | EAST run-level metrics and headline performance. | Immediately after each `train` run. |
-| `analysis/outputs/<run_name>/sequence_predictions/test/_summary.csv` | EAST test shot-level summary. | When checking warning hit/miss behavior per shot. |
-| `analysis/outputs/<run_name>/sequence_predictions/test/*.csv` | EAST per-shot probability timelines. | When plotting or diagnosing an individual shot timeline. |
-| `reports/plots/probability/shot_*_timeline.png` | Small visual sanity-check set of timeline plots (sampled shots). | Quick visual QA only; not full-shot coverage. |
-| `reports/plots/probability_timelines_test.csv` | Full timepoint-level timeline table for all 173 TEST shots (relaunch artifacts). | Full-batch analysis, aggregation, and custom plotting. |
-| `artifacts/models/best/warning_summary_test.csv` | Full shot-level warning decisions for the same 173 TEST shots. | Shot-level policy analysis and confusion/lead-time checks. |
-| `artifacts/models/iters/*/disruption_reason_per_shot.csv` | Per-disruptive-shot mechanism reason table (primary mechanism + top-k feature evidence). | Explain each disruptive shot and trace operator-facing root-cause hypotheses. |
-| `artifacts/models/iters/*/disruption_reason_report.md` | Readable per-shot markdown report with mechanism distribution and shot-by-shot evidence. | Human review, experiment logs, and handoff to control/operations teams. |
-| `reports/iters/summary.md` | Hyperparameter sweep comparison table and current recommended run. | Parameter iteration tracking and next-run selection. |
-| `artifacts/models/best/metrics_summary.json` | Relaunch-stage bounded MVP summary metrics. | Baseline comparison and report updates. |
-| `output/` | Reserved location for generated artifacts requested by users. | Use for ad-hoc generated exports and reports. |
+| `ref/paper_131.txt` | 核心先验知识参考，用于机制、特征和标注策略决策。 | 在修改特征集、标注策略或评估策略之前。 |
+| `data/EAST/exports/east_shot_catalog_summary.json` | EAST 数据目录可用性及可用性摘要。 | 在启动训练前，验证数据覆盖情况。 |
+| `analysis/outputs/<run_name>/metrics_summary.json` | EAST 运行级指标与核心性能。 | 每次 `train` 运行后立即查看。 |
+| `analysis/outputs/<run_name>/sequence_predictions/test/_summary.csv` | EAST 测试集炮级汇总。 | 检查单炮级别的预警命中/未命中行为时。 |
+| `analysis/outputs/<run_name>/sequence_predictions/test/*.csv` | EAST 单炮概率时间线。 | 绘图或诊断单炮时间线时。 |
+| `reports/plots/probability/shot_*_timeline.png` | 时间线图的小规模可视化样本（采样炮号）。 | 仅用于快速视觉 QA，非全炮次覆盖。 |
+| `reports/plots/probability_timelines_test.csv` | 所有 173 个 TEST 炮号的完整逐时间点时间线表（重启产物）。 | 全批量分析、聚合和自定义绘图。 |
+| `artifacts/models/best/warning_summary_test.csv` | 同一 173 个 TEST 炮号的完整炮级预警决策。 | 炮级策略分析及混淆/提前量检查。 |
+| `artifacts/models/iters/*/disruption_reason_per_shot.csv` | 每个破裂炮的机制原因表（主要机制 + top-k 特征证据）。 | 解释每个破裂炮并追溯面向运行人员的根因假设。 |
+| `artifacts/models/iters/*/disruption_reason_report.md` | 可读的单炮 Markdown 报告，含机制分布和逐炮证据。 | 人工审阅、实验记录及向控制/运行团队交接。 |
+| `reports/iters/summary.md` | 超参数扫描对比表及当前推荐运行。 | 参数迭代跟踪和下一次运行选择。 |
+| `artifacts/models/best/metrics_summary.json` | 重启阶段受限 MVP 汇总指标。 | 基线对比与报告更新。 |
+| `output/` | 用户请求的生成产物的保留位置。 | 用于临时生成的导出和报告。 |

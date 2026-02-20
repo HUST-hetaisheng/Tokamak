@@ -1,69 +1,69 @@
-# Literature Review: Tokamak Disruption Mechanisms and Method Chain (J-TEXT/EAST)
+# 文献综述：托卡马克破裂机制与方法链 (J-TEXT/EAST)
 
-## Scope and Sources
-- Primary evidence source: `ref/paper_131.txt`.
-- Supporting project context: `analysis/method_survey.md`, `analysis/framework_review.md`, `ref/托卡马克项目 - 2026-02-19.md`.
-- If a statement comes from conversational project notes rather than a clearly traceable paper excerpt, it is marked as an assumption.
+## 范围与来源
+- 主要证据来源：`ref/paper_131.txt`。
+- 辅助项目上下文：`analysis/method_survey.md`、`analysis/framework_review.md`、`ref/托卡马克项目 - 2026-02-19.md`。
+- 如果某陈述来自对话式项目笔记而非明确可追溯的论文摘录，则标记为假设。
 
-## 1. Disruption Mechanism Categories
+## 1. 破裂机制类别
 
-### 1.1 Event-chain perspective
-- Disruptions are described as either human-triggered (control/system faults) or naturally evolved plasma events.
-- Natural-disruption chains are reported as complex and frequently converge to locked-mode-associated terminal behavior.
-- Human-triggered chains include VDE and impurity/radiation-collapse pathways.
-- Evidence: `ref/paper_131.txt:433`, `ref/paper_131.txt:439`, `ref/paper_131.txt:443`, `ref/paper_131.txt:445`.
+### 1.1 事件链视角
+- 破裂被描述为人为触发（控制/系统故障）或自然演化的等离子体事件。
+- 自然破裂链被报告为复杂的，并且经常收敛到与锁模相关的终端行为。
+- 人为触发链包括 VDE（垂直位移事件）和杂质/辐射坍塌路径。
+- 证据：`ref/paper_131.txt:433`、`ref/paper_131.txt:439`、`ref/paper_131.txt:443`、`ref/paper_131.txt:445`。
 
-### 1.2 Operational-limit categories (physics scaling viewpoint)
-- Density limit (Greenwald): approaching/exceeding `n_GW` is linked to edge radiation asymmetry and current-channel contraction, then MHD destabilization.
-- Low-`q`/current limit: `q95 < 2` increases MHD risk (internal kink-like instability chain).
-- Beta limit: high normalized beta can trigger ideal MHD instability.
-- Evidence: `ref/paper_131.txt:448`, `ref/paper_131.txt:450`, `ref/paper_131.txt:455`.
+### 1.2 运行极限类别 (物理标度视角)
+- 密度极限（格林瓦尔德极限）：逼近/超过 `n_GW` 与边缘辐射不对称和电流通道收缩相关，继而导致 MHD（磁流体动力学）去稳定。
+- 低 `q` / 电流极限：`q95 < 2` 增加 MHD 风险（内部扭曲模不稳定链）。
+- Beta 极限：高归一化 beta 可触发理想 MHD 不稳定性。
+- 证据：`ref/paper_131.txt:448`、`ref/paper_131.txt:450`、`ref/paper_131.txt:455`。
 
-### 1.3 Device-observed dominant causes (EAST/J-TEXT context)
-- EAST major causes are summarized as impurity radiation, density-limit-related behavior, VDE, and MHD instability.
-- J-TEXT and EAST differ in diagnostics/configuration; therefore feature extraction must preserve physics equivalence rather than raw-channel equivalence.
-- Evidence: `ref/paper_131.txt:2195`, `ref/paper_131.txt:2199`, `ref/paper_131.txt:2201`.
+### 1.3 装置观测到的主要原因 (EAST/J-TEXT 背景)
+- EAST 的主要原因被概括为杂质辐射、密度极限相关行为、VDE 和 MHD 不稳定性。
+- J-TEXT 和 EAST 在诊断/配置上有差异；因此特征提取必须保持物理等效性而非原始通道等效性。
+- 证据：`ref/paper_131.txt:2195`、`ref/paper_131.txt:2199`、`ref/paper_131.txt:2201`。
 
-## 2. Observable Feature Relations to Mechanisms
+## 2. 可观测特征与机制的关系
 
-### 2.1 PGFE feature families
-- Four feature families are explicitly defined: MHD instability, radiation, density, and plasma-control features.
-- Evidence: `ref/paper_131.txt:1416`.
+### 2.1 PGFE（物理引导特征工程）特征家族
+- 四个特征家族被明确定义：MHD 不稳定性、辐射、密度和等离子体控制特征。
+- 证据：`ref/paper_131.txt:1416`。
 
-### 2.2 MHD precursor observables
-- Tearing/locked-mode precursors are represented by `Mir_Vpp`, `Mir_fre`, `Mir_abs`, mode numbers, and `n=1 amplitude`.
-- Typical locked-mode progression: main frequency decreases and amplitude grows rapidly before disruption.
-- Evidence: `ref/paper_131.txt:1457`, `ref/paper_131.txt:1461`, `ref/paper_131.txt:1523`, `ref/paper_131.txt:1531`.
+### 2.2 MHD 前兆可观测量
+- 撕裂/锁模前兆由 `Mir_Vpp`、`Mir_fre`、`Mir_abs`、模式数和 `n=1 amplitude` 表示。
+- 典型锁模进程：主频率下降，幅值在破裂前快速增长。
+- 证据：`ref/paper_131.txt:1457`、`ref/paper_131.txt:1461`、`ref/paper_131.txt:1523`、`ref/paper_131.txt:1531`。
 
-### 2.3 Radiation/density profile observables
-- Array higher-order statistics (`var`, `skew`, `kurt`) are used to encode profile asymmetry/shape evolution for SXR/AXUV/FIR-like channels.
-- Additional scalar proxies include `P_rad`, `CIII`, `SXR_core`, `sum_ne`, `ne0`.
-- Evidence: `ref/paper_131.txt:1558`, `ref/paper_131.txt:1593`, `ref/paper_131.txt:1661`, `ref/paper_131.txt:1663`.
+### 2.3 辐射/密度剖面可观测量
+- 阵列高阶统计量（`var`（方差）、`skew`（偏度）、`kurt`（峰度））用于编码 SXR（软X射线）/AXUV（轴向极紫外）/FIR 类通道的剖面不对称性/形状演化。
+- 额外标量代理量包括 `P_rad`、`CIII`、`SXR_core`、`sum_ne`、`ne0`。
+- 证据：`ref/paper_131.txt:1558`、`ref/paper_131.txt:1593`、`ref/paper_131.txt:1661`、`ref/paper_131.txt:1663`。
 
-### 2.4 Control-state observables
-- Balance/control signals include `Ip`, `Bt`, loop voltage, displacement (`dr`, `dz`), and derivatives/proxy terms.
-- Evidence: `ref/paper_131.txt:1671`, `ref/paper_131.txt:2250`.
+### 2.4 控制状态可观测量
+- 平衡/控制信号包括 `Ip`（等离子体电流）、`Bt`（环向磁场）、环电压、位移 (`dr`, `dz`) 及导数/代理项。
+- 证据：`ref/paper_131.txt:1671`、`ref/paper_131.txt:2250`。
 
-## 3. Method Chain: Purpose, Boundaries, Reproducibility Points
+## 3. 方法链：目的、边界、可复现要点
 
-| Method | Purpose | Boundaries | Reproducibility points |
+| 方法 | 目的 | 边界 | 可复现要点 |
 |---|---|---|---|
-| PGFE | Encode disruption physics into tabular features (MHD/radiation/density/control), reduce diagnostic heterogeneity, inject inductive bias. | Not one-size-fits-all; feature-extraction parameters must be adapted to each device; some features (e.g., `mode_number_m`) are harder on non-circular EAST geometry. | Keep explicit feature definitions and channel mapping per device; keep sampling frequency and normalization protocol fixed. Evidence: `ref/paper_131.txt:1416`, `ref/paper_131.txt:1445`, `ref/paper_131.txt:2204`, `ref/paper_131.txt:2222`. |
-| DART (GBDT with tree dropout) | Baseline classifier balancing performance and interpretability under limited data. | Still statistical, not causal; sensitive to feature quality and label policy; needs class imbalance handling. | Use same split protocol and weighted/undersampled training as reported. Evidence: `ref/paper_131.txt:1836`, `ref/paper_131.txt:1883`, `ref/paper_131.txt:2004`. |
-| SHAP | Post-hoc global/local attribution for feature contribution and mechanism analysis. | Attribution is model-relative (not direct causality proof); interpretation depends on baseline/reference data. | Fix model version, test split, and SHAP computation dataset for comparability. Evidence: `ref/paper_131.txt:1843`, `ref/paper_131.txt:3460`, `ref/paper_131.txt:3463`. |
-| CORAL / S-CORAL | Align source/target second-order statistics for cross-device transfer; S-CORAL uses label-aware class-wise alignment. | Linear covariance alignment cannot fully remove all domain gaps; U-CORAL wastes available label information in this task. | Report both U-CORAL and S-CORAL under identical features/splits; keep whitening-coloring and covariance computations deterministic. Evidence: `ref/paper_131.txt:2262`, `ref/paper_131.txt:2303`, `ref/paper_131.txt:2312`. |
-| FLS | Improve label fidelity by shot-wise precursor onset from anomaly detection; enable reuse of disruptive-shot non-disruptive segments with gray-zone buffering. | Depends on anomaly-detection quality and gray-zone width; if AD is weak on new devices, manual/alternative labeling is needed. | Log AD model choice and onset outputs; keep gray-zone widths fixed (J-TEXT 50 ms, EAST 200 ms in reported setup). Evidence: `ref/paper_131.txt:2713`, `ref/paper_131.txt:2741`, `ref/paper_131.txt:2743`. |
-| EFD | Enable zero-shot transfer by estimating target normalization parameters (`mu`, `sigma`) without target-model training. | Performance depends on normalization-parameter estimation quality; thesis implementation still used a small set of EAST disruptive shots for parameter estimation (not model training). | Save estimated `mu/sigma` artifact and sensitivity results; separate "parameter estimation data" from "model training data". Evidence: `ref/paper_131.txt:2834`, `ref/paper_131.txt:2855`, `ref/paper_131.txt:2861`. |
+| PGFE | 将破裂物理编码为表格特征（MHD/辐射/密度/控制），减少诊断异质性，注入归纳偏置。 | 非万能方案；特征提取参数须针对每个装置调整；某些特征（如 `mode_number_m`）在非圆截面 EAST 几何结构上更困难。 | 保持每个装置的特征定义和通道映射明确；保持采样频率和归一化协议固定。证据：`ref/paper_131.txt:1416`、`ref/paper_131.txt:1445`、`ref/paper_131.txt:2204`、`ref/paper_131.txt:2222`。 |
+| DART（丢弃正则化树，GBDT） | 在有限数据下平衡性能与可解释性的基线分类器。 | 仍为统计方法，非因果推理；对特征质量和标签策略敏感；需要类别不平衡处理。 | 使用与论文报告相同的拆分协议和加权/欠采样训练。证据：`ref/paper_131.txt:1836`、`ref/paper_131.txt:1883`、`ref/paper_131.txt:2004`。 |
+| SHAP（SHapley 可加解释） | 后处理的全局/局部归因，用于特征贡献和机制分析。 | 归因是相对于模型的（非直接因果证明）；解释取决于基线/参考数据。 | 固定模型版本、测试拆分和 SHAP 计算数据集以保证可比性。证据：`ref/paper_131.txt:1843`、`ref/paper_131.txt:3460`、`ref/paper_131.txt:3463`。 |
+| CORAL / S-CORAL（相关对齐） | 对齐源/目标二阶统计量以实现跨装置迁移；S-CORAL 使用标签感知的类别级对齐。 | 线性协方差对齐无法完全消除所有域差距；U-CORAL 在本任务中浪费了可用的标签信息。 | 在相同特征/拆分下报告 U-CORAL 和 S-CORAL；保持白化-着色和协方差计算确定性。证据：`ref/paper_131.txt:2262`、`ref/paper_131.txt:2303`、`ref/paper_131.txt:2312`。 |
+| FLS（灵活标注策略） | 通过异常检测的逐炮前兆起始改善标签保真度；启用灰区缓冲复用破裂炮的非破裂段。 | 依赖异常检测质量和灰区宽度；若 AD（异常检测）在新装置上表现弱，需人工/替代标注。 | 记录 AD 模型选择和起始输出；保持灰区宽度固定（报告设置中 J-TEXT 50 ms，EAST 200 ms）。证据：`ref/paper_131.txt:2713`、`ref/paper_131.txt:2741`、`ref/paper_131.txt:2743`。 |
+| EFD（早期特征分布估计） | 通过估计目标归一化参数 (`mu`、`sigma`) 实现零样本迁移，无需目标模型训练。 | 性能取决于归一化参数估计质量；论文实现仍使用少量 EAST 破裂炮进行参数估计（非模型训练）。 | 保存估计的 `mu/sigma` 产物和灵敏度结果；将"参数估计数据"与"模型训练数据"分离。证据：`ref/paper_131.txt:2834`、`ref/paper_131.txt:2855`、`ref/paper_131.txt:2861`。 |
 
-## 4. Quantitative Findings Reported in `paper_131`
-- J-TEXT source model (IDP-PGFE + DART): `AUC 0.987`, `TPR(>10ms) 96.36%`, `FPR 2.73%`.
-- With 10% training data: `AUC 0.939` (reported as 95.2% of baseline AUC).
-- Cross-device (J-TEXT->EAST) with S-CORAL using `10` EAST disruptive + `100` EAST non-disruptive shots: `AUC 0.890`, with reported `17%` gain over mixing-data strategy.
-- PGFE-U + FLS cross-device with only `10` EAST disruptive shots: `AUC 0.947` (`+6.4%` over prior S-CORAL setting).
-- EFD zero-shot transfer: `AUC 0.892` (`91.6%` of baseline).
-- Evidence: `ref/paper_131.txt:1928`, `ref/paper_131.txt:2057`, `ref/paper_131.txt:2577`, `ref/paper_131.txt:2795`, `ref/paper_131.txt:2904`, `ref/paper_131.txt:3002`.
+## 4. `paper_131` 中报告的量化结果
+- J-TEXT 源模型 (IDP-PGFE + DART)：`AUC 0.987`、`TPR(>10ms) 96.36%`、`FPR 2.73%`。
+- 使用 10% 训练数据：`AUC 0.939`（报告为基线 AUC 的 95.2%）。
+- 跨装置 (J-TEXT->EAST) 使用 S-CORAL，`10` 个 EAST 破裂炮 + `100` 个 EAST 非破裂炮：`AUC 0.890`，报告相对混合数据策略有 `17%` 提升。
+- PGFE-U + FLS 跨装置仅用 `10` 个 EAST 破裂炮：`AUC 0.947`（相对先前 S-CORAL 设置 `+6.4%`）。
+- EFD 零样本迁移：`AUC 0.892`（基线的 `91.6%`）。
+- 证据：`ref/paper_131.txt:1928`、`ref/paper_131.txt:2057`、`ref/paper_131.txt:2577`、`ref/paper_131.txt:2795`、`ref/paper_131.txt:2904`、`ref/paper_131.txt:3002`。
 
-## 5. Reproducibility Notes for This Repository
-- Repository currently contains shot lists and references, but no active training script is present in `analysis/` at this snapshot (assumption from workspace inspection).
-- Therefore, phase-1 should prioritize a minimal, quickly runnable J-TEXT E2E baseline with explicit artifacts and split manifests before expanding to cross-device transfer.
-- Project notes in `ref/托卡马克项目 - 2026-02-19.md` provide useful engineering hints but are conversational; use as assumption unless cross-checked with `paper_131`.
+## 5. 本仓库的可复现性说明
+- 仓库当前包含炮号列表和参考文献，但在此快照中 `analysis/` 下无活跃训练脚本（基于工作区检查的假设）。
+- 因此，第一阶段应优先构建一个最小化、可快速运行的 J-TEXT 端到端基线，带有明确的产物和拆分清单，然后再扩展到跨装置迁移。
+- `ref/托卡马克项目 - 2026-02-19.md` 中的项目笔记提供了有用的工程提示，但属于对话性质；除非与 `paper_131` 交叉验证，否则视为假设。

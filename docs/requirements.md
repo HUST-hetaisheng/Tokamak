@@ -1,100 +1,100 @@
-# Requirements: Phase-1 Implementation (J-TEXT E2E Baseline First)
+# 需求文档：第一阶段实施 (J-TEXT 端到端基线优先)
 
-## 0. Objective and Priority
-- Immediate objective: deliver a quickly runnable end-to-end J-TEXT disruption prediction baseline in this repository.
-- Baseline output must include time-resolved disruption probability and shot-level warning decisions.
-- Phase-1 prioritizes reproducibility and short turnaround; optional enhancements are deferred.
+## 0. 目标与优先级
+- 近期目标：在本仓库中交付一个可快速运行的 J-TEXT 端到端破裂预测基线。
+- 基线输出必须包含时间分辨的破裂概率和炮级预警决策。
+- 第一阶段优先保证可复现性和快速交付；可选增强暂缓。
 
-## 1. Project-Level Constraints
-- Default data root must be: `G:\我的云端硬盘\Fuison\data` (unless explicitly overridden by user).
-- `ref/paper_131.txt` is the primary methodology reference.
-- `1.ipynb`, `2.ipynb`, `3.ipynb` (lithium-battery project lineage) are out of scope.
-- Do not run long training in phase-1.
+## 1. 项目级约束
+- 默认数据根目录必须为：`G:\我的云端硬盘\Fuison\data`（除非用户明确覆盖）。
+- `ref/paper_131.txt` 是主要方法论参考。
+- `1.ipynb`、`2.ipynb`、`3.ipynb`（锂电池项目出身）不在范围内。
+- 第一阶段不运行长时间训练。
 
-## 2. Scientific/Modeling Requirements (Phase-1 Mandatory)
+## 2. 科学/建模需求 (第一阶段必须)
 
-### 2.1 Task definition
-- Binary disruption prediction (`disruptive` vs `non-disruptive`) with timepoint probability output.
-- Evaluation must report both:
-- shot-level metrics (`AUC`, `TPR`, `FPR`, lead-time success),
-- timepoint-level metrics (`ROC-AUC`, optional `PR-AUC`).
+### 2.1 任务定义
+- 二分类破裂预测（`disruptive` vs `non-disruptive`），带逐时间点概率输出。
+- 评估必须报告：
+  - 炮级指标（`AUC`（曲线下面积）、`TPR`（真阳性率）、`FPR`（假阳性率）、提前量成功率），
+  - 时间点级指标（`ROC-AUC`、可选 `PR-AUC`（精确率-召回率曲线下面积））。
 
-### 2.2 Label protocol
-- Baseline label policy (required now): fixed pre-disruption warning window for J-TEXT (paper reports 25 ms in fixed-label setup).
-- Keep a config switch for later FLS integration (do not block phase-1 on FLS).
-- Evidence: `ref/paper_131.txt:1880`, `ref/paper_131.txt:2704`.
+### 2.2 标注协议
+- 基线标注策略（必须立即实现）：J-TEXT 的固定破裂前预警窗口（论文报告固定标注设置为 25 ms）。
+- 保留一个配置开关用于后续 FLS（灵活标注策略）集成（第一阶段不阻塞于 FLS）。
+- 证据：`ref/paper_131.txt:1880`、`ref/paper_131.txt:2704`。
 
-### 2.3 Feature protocol
-- Use PGFE-style physics features grouped as MHD/radiation/density/control.
-- Keep feature definitions explicit and versioned (feature name, formula, source channels, units/scaling).
-- Evidence: `ref/paper_131.txt:1416`, `ref/paper_131.txt:2228`.
+### 2.3 特征协议
+- 使用 PGFE（物理引导特征工程）风格的物理特征，按 MHD/辐射/密度/控制分组。
+- 保持特征定义明确且版本化（特征名、公式、源通道、单位/缩放）。
+- 证据：`ref/paper_131.txt:1416`、`ref/paper_131.txt:2228`。
 
-### 2.4 Classifier protocol
-- Phase-1 baseline classifier: tree-ensemble with DART-style setup (paper baseline family).
-- Must include class-imbalance treatment (weighting and/or controlled downsampling).
-- Evidence: `ref/paper_131.txt:1836`, `ref/paper_131.txt:1883`.
+### 2.4 分类器协议
+- 第一阶段基线分类器：DART（丢弃正则化树）风格设置的树集成（论文基线家族）。
+- 必须包含类别不平衡处理（加权和/或受控欠采样）。
+- 证据：`ref/paper_131.txt:1836`、`ref/paper_131.txt:1883`。
 
-### 2.5 Normalization and slicing
-- Enforce z-score normalization using training-derived statistics only.
-- Enforce causal time slicing and record all window lengths in run metadata.
-- Evidence: `ref/paper_131.txt:1885`.
+### 2.5 归一化与分片
+- 强制使用仅基于训练集统计量的 z-score 归一化。
+- 强制因果时间分片，并在运行元数据中记录所有窗口长度。
+- 证据：`ref/paper_131.txt:1885`。
 
-## 3. Data and Artifact Requirements
+## 3. 数据与产物需求
 
-### 3.1 Required inputs
+### 3.1 所需输入
 - `shot_list/J-TEXT/Disruption_J-TEXT.json`
 - `shot_list/J-TEXT/Non-disruption_J-TEXT.json`
-- `shot_list/J-TEXT/AdvancedTime_J-TEXT.json` (for later FLS/advanced labeling compatibility)
-- J-TEXT HDF5 data under default data root (exact subpath resolved by Agent-2 pipeline).
+- `shot_list/J-TEXT/AdvancedTime_J-TEXT.json`（用于后续 FLS/高级标注兼容性）
+- 默认数据根目录下的 J-TEXT HDF5 数据（确切子路径由 Agent-2 管线解析）。
 
-### 3.2 Required outputs (phase-1 run artifact set)
-- `metrics_summary.json` with `AUC`, `TPR`, `FPR`, lead-time metrics.
-- `training_config.json` including seeds, split manifest, feature list, label policy.
-- `normalization_stats.json` (`mu`, `sigma` per feature).
-- `sequence_predictions/*.csv` (per-shot probability timeline + warning decision).
-- `run_manifest.md` (data snapshot, commit hash if available, commands used).
-- Output location must remain under `output/` (project rule).
+### 3.2 所需输出 (第一阶段运行产物集)
+- `metrics_summary.json`，含 `AUC`、`TPR`、`FPR`、提前量指标。
+- `training_config.json`，包括种子、拆分清单、特征列表、标注策略。
+- `normalization_stats.json`（每个特征的 `mu`、`sigma`）。
+- `sequence_predictions/*.csv`（单炮概率时间线 + 预警决策）。
+- `run_manifest.md`（数据快照、提交哈希（如有）、使用的命令）。
+- 输出位置必须保持在 `output/` 下（项目规则）。
 
-## 4. Acceptance Criteria (Phase-1)
-- Pipeline runs end-to-end on J-TEXT without manual edits after config setup.
-- Re-run with same seed reproduces metrics within a tight tolerance (document tolerance).
-- Baseline must report whether it meets the project discrimination target (`>=95%` classification accuracy target at project level); if not met, gap analysis is required.
-- Evidence for benchmark expectation: J-TEXT paper baseline `AUC 0.987`, `TPR 96.36%`, `FPR 2.73%`.
-- Evidence: `ref/paper_131.txt:1928`.
+## 4. 验收标准 (第一阶段)
+- 管线在配置完成后可在 J-TEXT 上端到端运行，无需手动编辑。
+- 使用相同种子重跑可在紧密容差内复现指标（需记录容差）。
+- 基线必须报告是否达到项目辨别力目标（项目级 `>=95%` 分类准确率目标）；若未达到，需进行差距分析。
+- 基准期望证据：J-TEXT 论文基线 `AUC 0.987`、`TPR 96.36%`、`FPR 2.73%`。
+- 证据：`ref/paper_131.txt:1928`。
 
-## 5. Phase-1 Execution Roadmap (Prioritized)
+## 5. 第一阶段执行路线图 (按优先级)
 
-## P0 (Do now, required for immediate progress)
-1. Build J-TEXT dataset manifest and deterministic split manifest.
-2. Implement PGFE feature extraction path needed for baseline features.
-3. Train/evaluate DART-style baseline with fixed-label protocol.
-4. Export required artifacts and concise run report.
+## P0 (立即执行，当前进展所需)
+1. 构建 J-TEXT 数据集清单和确定性拆分清单。
+2. 实现基线特征所需的 PGFE 特征提取路径。
+3. 使用固定标注协议训练/评估 DART 风格基线。
+4. 导出所需产物和简明运行报告。
 
-## P1 (Do next, after P0 is stable)
-1. Add SHAP global/local explainability export for baseline model.
-2. Add FLS-compatible labeling pipeline and A/B comparison against fixed labels.
-3. Add feature-ablation report by mechanism family (MHD/radiation/density/control).
+## P1 (接下来执行，P0 稳定后)
+1. 为基线模型添加 SHAP（可解释性归因）全局/局部可解释性导出。
+2. 添加 FLS 兼容的标注管线，并对比固定标签进行 A/B 比较。
+3. 按机制家族（MHD/辐射/密度/控制）添加特征消融报告。
 
-## P2 (Postpone; optional for phase-1 deadline)
-1. Cross-device J-TEXT->EAST adaptation with CORAL/S-CORAL.
-2. PGFE-U refinements (SVD mode extraction, normalized proxies).
-3. EFD zero-shot normalization estimation workflow.
-4. Lightweight sequence-model backend (TCN/SSM) for online deployment study.
+## P2 (推迟；第一阶段截止前可选)
+1. 使用 CORAL/S-CORAL（相关对齐）进行 J-TEXT->EAST 跨装置适配。
+2. PGFE-U 改进（SVD（奇异值分解）模式提取、归一化代理量）。
+3. EFD（早期特征分布估计）零样本归一化估计工作流。
+4. 轻量级序列模型后端 (TCN/SSM) 用于在线部署研究。
 
-## 6. Explicit Non-Goals for Phase-1
-- Full multi-device transfer benchmark.
-- Zero-shot transfer productionization.
-- Long-horizon hyperparameter sweeps or exhaustive model zoo comparisons.
+## 6. 第一阶段的明确非目标
+- 完整的多装置迁移基准。
+- 零样本迁移的生产化。
+- 长期超参数扫描或穷举模型库对比。
 
-## 7. Appendix: Output Artifacts and Physics Interpretability
+## 7. 附录：输出产物与物理可解释性
 
-This appendix links each key output artifact to the paper-aligned physics concept it supports in interpretation.
+本附录将每个关键输出产物与其在解释中支持的论文对齐物理概念关联。
 
-| Artifact file | Interpretability role | Paper concept supported |
+| 产物文件 | 可解释性角色 | 支持的论文概念 |
 |---|---|---|
-| `output/**/training_config.json` | Freezes split seed, label window, feature list, and model settings so interpretation is tied to a reproducible experiment definition. | DART protocol reproducibility and fixed-label policy (`ref/paper_131.txt:1836`, `ref/paper_131.txt:1880`). |
-| `output/**/normalization_stats.json` | Stores per-feature `mu/sigma` so feature magnitudes and cross-shot comparisons remain physically comparable. | Training-derived normalization; transfer precondition used by EFD/CORAL workflows (`ref/paper_131.txt:1885`, `ref/paper_131.txt:2834`). |
-| `output/**/metrics_summary.json` | Quantifies discrimination quality (`AUC`, `TPR`, `FPR`) to validate whether extracted physics signals are operationally useful. | J-TEXT baseline quantitative target framing (`ref/paper_131.txt:1928`). |
-| `output/**/sequence_predictions/*.csv` | Provides time-resolved `P(disruption|t)` and warning points for precursor-timeline interpretation at shot level. | Early-warning framing from disruption precursor evolution (`ref/paper_131.txt:1457`, `ref/paper_131.txt:1523`). |
-| `output/**/shap_topk.csv` (or equivalent SHAP export) | Maps model contributions back to feature families to assess whether dominant signals align with known mechanisms. | SHAP-based mechanism analysis and PGFE family interpretation (`ref/paper_131.txt:1843`, `ref/paper_131.txt:3460`, `ref/paper_131.txt:1416`). |
-| `artifacts/datasets/jtext_v1/required_features.json` (data-build stage) | Documents feature-space contract so MHD/radiation/density/control coverage is explicit before model fitting. | PGFE feature-group definition and device-portable feature semantics (`ref/paper_131.txt:1416`, `ref/paper_131.txt:2228`). |
+| `output/**/training_config.json` | 冻结拆分种子、标签窗口、特征列表和模型设置，使解释与可复现的实验定义绑定。 | DART 协议可复现性和固定标注策略 (`ref/paper_131.txt:1836`、`ref/paper_131.txt:1880`)。 |
+| `output/**/normalization_stats.json` | 存储每个特征的 `mu/sigma`，使特征量级和跨炮比较保持物理可比性。 | 基于训练集的归一化；EFD/CORAL 工作流使用的迁移前提条件 (`ref/paper_131.txt:1885`、`ref/paper_131.txt:2834`)。 |
+| `output/**/metrics_summary.json` | 量化辨别质量 (`AUC`、`TPR`、`FPR`)，以验证提取的物理信号是否具有运行实用性。 | J-TEXT 基线量化目标框架 (`ref/paper_131.txt:1928`)。 |
+| `output/**/sequence_predictions/*.csv` | 提供时间分辨的 `P(破裂|t)` 和预警点，用于炮级前兆时间线解释。 | 源自破裂前兆演化的早期预警框架 (`ref/paper_131.txt:1457`、`ref/paper_131.txt:1523`)。 |
+| `output/**/shap_topk.csv`（或等效 SHAP 导出） | 将模型贡献映射回特征家族，以评估主导信号是否与已知机制对齐。 | 基于 SHAP 的机制分析和 PGFE 家族解释 (`ref/paper_131.txt:1843`、`ref/paper_131.txt:3460`、`ref/paper_131.txt:1416`)。 |
+| `artifacts/datasets/jtext_v1/required_features.json`（数据构建阶段） | 记录特征空间契约，使 MHD/辐射/密度/控制覆盖在模型拟合前明确。 | PGFE 特征组定义和跨装置可移植特征语义 (`ref/paper_131.txt:1416`、`ref/paper_131.txt:2228`)。 |
