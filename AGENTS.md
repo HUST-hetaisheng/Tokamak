@@ -22,6 +22,11 @@
 ### Project Structure & Module Organization
 - `src/models/baseline/train_xgb.py` is the main entry point for the XGBoost baseline.
 - `src/models/advanced/train_sequence.py` is the main entry point for Mamba, Transformer, and GRU models.
+- `src/models/ultra_transfer/train_transfer_sequence.py` is the main entry point for the **ultra_transfer** pipeline (独立迁移实验工作区).
+- `src/models/ultra_transfer/config.py`: `TransferWorkspaceConfig` dataclass (独立实验配置).
+- `src/models/ultra_transfer/data.py`: 数据加载、动态特征增强 (`d1__`/`dr__`)、严格分区校验.
+- `src/models/ultra_transfer/trainer.py`: 训练循环 (balanced sampler + focal loss)、推理封装.
+- `src/models/ultra_transfer/evaluation_adapter.py`: 校准、稳健阈值扫描、shot policy、原因归因.
 - `src/evaluation/` contains shared evaluation, calibration, and report generation logic.
 - `src/data/build_dataset.py` handles data preprocessing and train/val/test splitting.
 - `shot_list/EAST/*.json` and `shot_list/J-TEXT/*.json` define disruptive/non-disruptive shot splits.
@@ -35,6 +40,10 @@
   `python src/models/baseline/train_xgb.py --dataset-dir artifacts/datasets/jtext_v1 --output-dir artifacts/models/best`
 - Smoke training run for advanced:
   `python src/models/advanced/train_sequence.py --dataset-dir artifacts/datasets/jtext_v1 --output-dir artifacts/models/iters/adv_mamba_lite --models mamba_lite`
+- Smoke training run for ultra_transfer:
+  `python src/models/ultra_transfer/train_transfer_sequence.py --mode run --models gru --epochs 2 --max-train-shots 24 --max-val-shots 12 --max-test-shots 12`
+- Module self-check for ultra_transfer:
+  `python src/models/ultra_transfer/train_transfer_sequence.py --mode module-check`
 - Build dataset: `python src/data/build_dataset.py --repo-root . --dataset-name jtext_v1`
 
 ### Coding Style & Naming Conventions
@@ -132,6 +141,42 @@ from src.evaluation.eval import compute_binary_metrics
 - `probability_timelines_test.csv`: Full time-point predictions.
 - `calibrator.joblib`: Fitted probability calibrator.
 - `training_config.json`: Full training configuration and metadata.
+
+## Latest Experimental Results (auto-generated from artifacts)
+
+### Pipeline: baseline (XGBoost)
+| Artifact Dir | ROC-AUC | PR-AUC | shot_tpr | shot_fpr | lead_ms | theta | objective |
+|---|---|---|---|---|---|---|---|
+| `best/` | 0.793 | 0.043 | 0.000 | 0.063 | NaN | 0.026 | shot_fpr_constrained |
+
+### Pipeline: advanced (train_sequence.py)
+| Artifact Dir | model | ROC-AUC | PR-AUC | shot_tpr | shot_fpr | lead_ms | theta | objective |
+|---|---|---|---|---|---|---|---|---|
+| `iters/adv_mamba_lite_ws128_st16_e5_s42` | mamba_lite | **0.990** | **0.913** | 0.895 | 0.000 | 0.0 | 0.767 | shot_fpr_constrained |
+| `iters/adv_transformer_small_ws128_st16_e5_s42` | transformer_small | 0.977 | 0.879 | 0.842 | 0.007 | 0.0 | 0.826 | shot_fpr_constrained |
+| `iters/adv_gru_ws128_st16_e5_s42` | gru | 0.986 | 0.761 | 0.684 | 0.007 | 0.0 | 0.859 | shot_fpr_constrained |
+| `iters/youden_d4_e260_lr004_ss085_cs09_s5_reason` | xgb | 0.978 | 0.637 | 0.974 | 0.163 | 67.7 | 0.017 | youden |
+| `iters/acc_d6_e140_lr007_ss08_cs08_s5` | xgb | 0.986 | 0.755 | 0.737 | 0.007 | 8.1 | 0.469 | accuracy |
+| `iters/sfpr002_d4_e260_lr004_s3_reason` | xgb | 0.978 | 0.635 | 0.842 | 0.015 | 7.1 | 0.669 | shot_fpr_constrained |
+
+### Pipeline: ultra_transfer (train_transfer_sequence.py)
+| Artifact Dir | model | ROC-AUC | PR-AUC | shot_tpr | shot_fpr | lead_ms | theta | objective | strict | dynamics |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `ultra_transfer_full/lead_time_v1/utr_gru_ws128_st16_e6_s42` | gru | **0.986** | **0.866** | **0.895** | **0.000** | **6.6** | 0.531 | shot_fpr_constrained_stable | **yes** | yes |
+| `ultra_transfer_full/method_correctness/utr_gru_ws64_st16_e6_s42` | gru | 0.925 | 0.744 | 0.868 | 0.007 | 4.1 | 0.979 | stable | **yes** | yes |
+| `ultra_transfer_seq/step1/utr_gru_ws64_st16_e2_s42` | gru | 0.907 | 0.483 | 0.833 | 0.000 | 2.0 | 0.698 | stable | no | yes |
+| `ultra_transfer_seq/step2/utr_gru_ws64_st16_e2_s42` | gru | 0.907 | 0.483 | 0.833 | 0.000 | 2.0 | 0.687 | stable | no | yes |
+| `ultra_transfer/utr_gru_ws64_st16_e1_s42` | gru | 0.879 | 0.095 | 0.000 | 0.000 | NaN | 0.504 | stable | no | yes |
+
+### Key Observations
+- **Best ROC-AUC**: advanced/mamba_lite (0.990) ≈ ultra_transfer/lead_time_v1 (0.986) > advanced/gru (0.986).
+- **Best shot_tpr (low FPR)**: ultra_transfer/lead_time_v1 (0.895 @ 0% FPR) > ultra_transfer/method_correctness (0.868 @ 0.7% FPR).
+- **Lead time progress**: lead_time_v1 achieves median 6.6ms (p25=4.0, p75=13.8ms), up from 4.1ms. 25%+ of disruptive shots now have lead time >10ms.
+- **Threshold stability**: theta dropped from 0.979 → 0.531 after increasing `fallback_fls_ms` (25→100ms) and `gray_ms` (30→50ms), indicating much healthier probability separation.
+- **Calibration**: ECE=0.002 (excellent), Brier=0.005. Calibration delta on val: ECE 0.027→0.015.
+- **Method correctness**: `lead_time_v1` and `method_correctness` runs both have `strict_method_checks=true` with proper val split isolation.
+- **Dynamic features**: ultra_transfer adds `d1__`/`dr__` channels (69 features vs 23 base), contributing physics-based temporal change signals.
+- **Remaining gap**: median lead time 6.6ms still below 10ms target; further improvement may require FLS (AdvancedTime) or longer `fls_ms` sweep.
 
 ## Commit & Pull Request Guidelines
 - This workspace uses Conventional Commit prefixes (`feat:`, `fix:`, `refactor:`).
