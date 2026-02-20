@@ -1,0 +1,76 @@
+{
+  "theta_chosen": 0.026387959866220737,
+  "sustain_ms": 5.0,
+  "max_shot_fpr": 0.02,
+  "verdict": "STABLE",
+  "verdict_reasons": [
+    "Stable region width = 0.099 (narrow but acceptable)"
+  ],
+  "bootstrap": {
+    "n_boot": 50,
+    "theta_mean": 0.025076923076923073,
+    "theta_std": 0.004445942062516898,
+    "theta_95ci": [
+      0.01,
+      0.026387959866220737
+    ],
+    "theta_95ci_width": 0.016387959866220735,
+    "metric_ci": {
+      "shot_tpr": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0
+      },
+      "shot_fpr": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0
+      },
+      "shot_accuracy": {
+        "mean": 0.9,
+        "std": 0.0,
+        "ci_lower": 0.9,
+        "ci_upper": 0.9
+      },
+      "lead_time_ms_median": {
+        "mean": NaN,
+        "std": NaN,
+        "ci_lower": NaN,
+        "ci_upper": NaN
+      }
+    },
+    "n_shots_per_sample": 10,
+    "n_disruptive_per_sample_mean": 1.0
+  },
+  "sensitivity": {
+    "theta_center": 0.026387959866220737,
+    "delta": 0.1,
+    "gradient_at_center": {
+      "d_shot_tpr_d_theta": 0.0,
+      "d_shot_fpr_d_theta": -25.45764154959556,
+      "d_shot_accuracy_d_theta": 22.911877394636015,
+      "d_lead_time_ms_median_d_theta": NaN
+    },
+    "stable_region": {
+      "theta_lo": 0.027458193979933113,
+      "theta_hi": 0.12638795986622076,
+      "stable_width": 0.09892976588628764,
+      "max_shot_fpr_constraint": 0.02
+    }
+  },
+  "loocv": {
+    "n_folds": 9,
+    "theta_mean": 0.026387959866220737,
+    "theta_std": 0.0,
+    "theta_min": 0.026387959866220737,
+    "theta_max": 0.026387959866220737,
+    "theta_range": 0.0,
+    "theta_cv": 0.0,
+    "loo_accuracy": 1.0,
+    "loo_correct": 9,
+    "loo_total": 9
+  },
+  "shot_roc_rows": 200
+}

@@ -8,9 +8,14 @@ import torch
 import torch.nn as nn
 
 
-def _sinusoidal_positional_encoding(length: int, dim: int, device: torch.device) -> torch.Tensor:
+def _sinusoidal_positional_encoding(
+    length: int, dim: int, device: torch.device
+) -> torch.Tensor:
     position = torch.arange(length, dtype=torch.float32, device=device).unsqueeze(1)
-    div_term = torch.exp(torch.arange(0, dim, 2, dtype=torch.float32, device=device) * (-math.log(10000.0) / dim))
+    div_term = torch.exp(
+        torch.arange(0, dim, 2, dtype=torch.float32, device=device)
+        * (-math.log(10000.0) / dim)
+    )
     pe = torch.zeros(length, dim, dtype=torch.float32, device=device)
     pe[:, 0::2] = torch.sin(position * div_term)
     pe[:, 1::2] = torch.cos(position * div_term)
@@ -110,7 +115,12 @@ class MambaLiteClassifier(nn.Module):
         super().__init__()
         self.pooling = pooling
         self.input_proj = nn.Linear(input_dim, d_model)
-        self.blocks = nn.ModuleList([MambaLiteBlock(d_model, state_dim=state_dim, dropout=dropout) for _ in range(n_layers)])
+        self.blocks = nn.ModuleList(
+            [
+                MambaLiteBlock(d_model, state_dim=state_dim, dropout=dropout)
+                for _ in range(n_layers)
+            ]
+        )
         self.norm = nn.LayerNorm(d_model)
         self.head = nn.Sequential(
             nn.Dropout(dropout),

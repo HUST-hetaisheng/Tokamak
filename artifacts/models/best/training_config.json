@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-02-19T12:55:04.141824+00:00",
+  "generated_at_utc": "2026-02-20T06:50:49.851888+00:00",
   "data_root": "G:\\\u6211\u7684\u4e91\u7aef\u786c\u76d8\\Fuison\\data",
   "hdf5_root": "G:\\\u6211\u7684\u4e91\u7aef\u786c\u76d8\\Fuison\\data\\J-TEXT\\unified_hdf5",
   "feature_count": 23,
@@ -36,21 +36,26 @@
     "selected_feature_count": 23
   },
   "shot_counts": {
-    "train": 1386,
-    "val": 174,
-    "test": 173
+    "train": 30,
+    "val_total": 20,
+    "val_calibration": 10,
+    "val_threshold": 10,
+    "test": 20
   },
   "point_counts": {
-    "train_raw": 474461,
-    "train_used": 465493,
-    "val_raw": 59753,
-    "val_used": 58631,
-    "test_raw": 57961,
-    "test_used": 56830
+    "train_raw": 10193,
+    "train_used": 10103,
+    "val_calibration_raw": 3382,
+    "val_calibration_used": 3322,
+    "val_threshold_raw": 3712,
+    "val_threshold_used": 3682,
+    "test_raw": 6250,
+    "test_used": 6131
   },
   "missing_shots": {
     "train": [],
-    "val": [],
+    "val_calibration": [],
+    "val_threshold": [],
     "test": []
   },
   "labeling": {
@@ -59,31 +64,42 @@
     "fallback_dt_ms": 1.0
   },
   "class_imbalance": {
-    "train_pos_points": 5759,
-    "train_neg_points": 459734,
-    "scale_pos_weight": 79.82878972043757
+    "train_pos_points": 63,
+    "train_neg_points": 10040,
+    "scale_pos_weight": 159.36507936507937
   },
   "selected_model": "xgb_dart",
-  "calibration": "isotonic",
+  "calibration": "isotonic_cv",
   "threshold_policy": {
-    "objective": "accuracy",
-    "theta": 0.4688628762541806,
+    "objective": "shot_fpr_constrained",
+    "max_shot_fpr": 0.02,
+    "theta": 0.026387959866220737,
     "sustain_ms": 5.0,
     "selection_diag": {
-      "accuracy": 0.9891695519435111,
-      "tpr": 0.5621572212065814,
-      "fpr": 0.002711298816413786,
-      "objective": "accuracy"
+      "shot_tpr": 0.0,
+      "shot_fpr": 0.0,
+      "shot_accuracy": 0.9,
+      "lead_time_ms_median": -1000000000000.0,
+      "max_shot_fpr": 0.02,
+      "feasible_found": 1.0,
+      "feasible_threshold_count": 295.0,
+      "objective": "shot_fpr_constrained"
     }
   },
+  "calibration_split": {
+    "calibration_shot_fraction": 0.5,
+    "val_total_shots": 20,
+    "val_calibration_shots": 10,
+    "val_threshold_shots": 10
+  },
   "plotting": {
-    "plot_all_test_shots": true,
+    "plot_all_test_shots": false,
     "plot_shot_limit": 3,
-    "test_shot_count": 173,
-    "generated_timeline_png": 173
+    "test_shot_count": 20,
+    "generated_timeline_png": 3
   },
   "xgb_params": {
-    "n_estimators": 140,
+    "n_estimators": 10,
     "learning_rate": 0.07,
     "max_depth": 6,
     "subsample": 0.8,

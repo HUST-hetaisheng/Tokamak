@@ -27,12 +27,12 @@ except Exception:
     shap = None
 
 if __package__ is None or __package__ == "":
-    repo_root_for_imports = Path(__file__).resolve().parents[2]
+    repo_root_for_imports = Path(__file__).resolve().parents[3]
     if str(repo_root_for_imports) not in sys.path:
         sys.path.insert(0, str(repo_root_for_imports))
 
-from src.models.calibrate import ProbabilityCalibrator, calibration_quality_delta
-from src.models.eval import (
+from src.evaluation.calibrate import ProbabilityCalibrator, calibration_quality_delta
+from src.evaluation.eval import (
     apply_shot_warning_policy,
     choose_threshold_by_accuracy,
     choose_threshold_by_shot_fpr,
@@ -48,11 +48,43 @@ DEFAULT_DATA_ROOT = Path("G:/我的云端硬盘/Fuison/data")
 DEFAULT_REQUIRED_FEATURE_COUNT = 23
 
 PHYSICS_MAP: Dict[str, List[str]] = {
-    "density_limit": ["ne_nG", "CIII", "sxr_kurt", "sxr_mean", "sxr_skew", "sxr_var", "xuv_kurt", "xuv_ratio", "xuv_skew", "xuv_var", "Mir_avg_amp", "Mir_VV", "v_loop"],
-    "locked_mode": ["Mir_avg_fre", "Mir_avg_amp", "Mir_VV", "mode_number_n", "n=1 amplitude", "MNM"],
+    "density_limit": [
+        "ne_nG",
+        "CIII",
+        "sxr_kurt",
+        "sxr_mean",
+        "sxr_skew",
+        "sxr_var",
+        "xuv_kurt",
+        "xuv_ratio",
+        "xuv_skew",
+        "xuv_var",
+        "Mir_avg_amp",
+        "Mir_VV",
+        "v_loop",
+    ],
+    "locked_mode": [
+        "Mir_avg_fre",
+        "Mir_avg_amp",
+        "Mir_VV",
+        "mode_number_n",
+        "n=1 amplitude",
+        "MNM",
+    ],
     "low_q_current_limit": ["qa_proxy", "ip", "Bt", "mode_number_n", "Mir_avg_amp"],
     "vde_control_loss": ["Z_proxy", "dx_a", "dy_a", "v_loop"],
-    "impurity_radiation_collapse": ["CIII", "v_loop", "sxr_kurt", "sxr_mean", "sxr_skew", "sxr_var", "xuv_kurt", "xuv_ratio", "xuv_skew", "xuv_var"],
+    "impurity_radiation_collapse": [
+        "CIII",
+        "v_loop",
+        "sxr_kurt",
+        "sxr_mean",
+        "sxr_skew",
+        "sxr_var",
+        "xuv_kurt",
+        "xuv_ratio",
+        "xuv_skew",
+        "xuv_var",
+    ],
 }
 
 
@@ -67,13 +99,19 @@ class SplitPack:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Bounded DART-centered J-TEXT training + calibration + SHAP")
+    parser = argparse.ArgumentParser(
+        description="Bounded DART-centered J-TEXT training + calibration + SHAP"
+    )
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
     parser.add_argument("--hdf5-subdir", default="J-TEXT/unified_hdf5")
-    parser.add_argument("--dataset-artifact-dir", type=Path, default=Path("artifacts/datasets/jtext_v1"))
+    parser.add_argument(
+        "--dataset-artifact-dir", type=Path, default=Path("artifacts/datasets/jtext_v1")
+    )
     parser.add_argument("--split-dir", type=Path, default=Path("splits"))
-    parser.add_argument("--output-dir", type=Path, default=Path("artifacts/models/best"))
+    parser.add_argument(
+        "--output-dir", type=Path, default=Path("artifacts/models/best")
+    )
     parser.add_argument("--report-dir", type=Path, default=Path("reports"))
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--gray-ms", type=float, default=30.0)
@@ -89,7 +127,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--xgb-subsample", type=float, default=0.8)
     parser.add_argument("--xgb-colsample-bytree", type=float, default=0.8)
     parser.add_argument("--n-jobs", type=int, default=4)
-    parser.add_argument("--calibration-method", choices=["isotonic", "sigmoid"], default="isotonic")
+    parser.add_argument(
+        "--calibration-method",
+        choices=["isotonic", "isotonic_cv", "sigmoid"],
+        default="isotonic_cv",
+    )
     parser.add_argument(
         "--threshold-objective",
         choices=["youden", "accuracy", "shot_fpr_constrained"],
@@ -103,6 +145,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reason-top-k", type=int, default=3)
     parser.add_argument("--max-shap-samples", type=int, default=5000)
     parser.add_argument("--top-k-shap", type=int, default=12)
+    parser.add_argument(
+        "--run-stability",
+        action="store_true",
+        help="Run threshold stability analysis (bootstrap CI, LOO-CV, sensitivity)",
+    )
+    parser.add_argument(
+        "--stability-n-boot",
+        type=int,
+        default=2000,
+        help="Number of bootstrap iterations for stability analysis",
+    )
     return parser.parse_args()
 
 
@@ -269,7 +322,9 @@ def load_shot_features(
         n_min = min(lengths)
         n_max = max(lengths)
         if n_max - n_min > reconcile_len_tol:
-            raise ValueError(f"Length mismatch too large in {h5_path}: {n_min}..{n_max}")
+            raise ValueError(
+                f"Length mismatch too large in {h5_path}: {n_min}..{n_max}"
+            )
 
         x = np.stack([a[:n_min] for a in arrs], axis=1).astype(np.float32)
         t_ms = infer_time_axis_ms(h5, n_min, fallback_dt_ms=fallback_dt_ms)
@@ -367,10 +422,14 @@ def load_split(
     )
 
 
-def train_logreg(x_train: np.ndarray, y_train: np.ndarray, seed: int) -> Tuple[StandardScaler, LogisticRegression]:
+def train_logreg(
+    x_train: np.ndarray, y_train: np.ndarray, seed: int
+) -> Tuple[StandardScaler, LogisticRegression]:
     scaler = StandardScaler()
     x_scaled = scaler.fit_transform(x_train)
-    model = LogisticRegression(max_iter=600, class_weight="balanced", solver="lbfgs", random_state=seed)
+    model = LogisticRegression(
+        max_iter=600, class_weight="balanced", solver="lbfgs", random_state=seed
+    )
     model.fit(x_scaled, y_train)
     return scaler, model
 
@@ -398,13 +457,22 @@ def train_xgb(
         "scale_pos_weight": float(scale_pos_weight),
     }
     if booster == "dart":
-        params.update({"sample_type": "uniform", "normalize_type": "tree", "rate_drop": 0.1, "skip_drop": 0.5})
+        params.update(
+            {
+                "sample_type": "uniform",
+                "normalize_type": "tree",
+                "rate_drop": 0.1,
+                "skip_drop": 0.5,
+            }
+        )
     model = xgb.XGBClassifier(**params)
     model.fit(x_train, y_train, verbose=False)
     return model
 
 
-def metrics_from_prob(y_true: np.ndarray, prob: np.ndarray, threshold: float) -> Dict[str, float]:
+def metrics_from_prob(
+    y_true: np.ndarray, prob: np.ndarray, threshold: float
+) -> Dict[str, float]:
     return compute_binary_metrics(y_true=y_true, y_prob=prob, threshold=threshold)
 
 
@@ -444,17 +512,28 @@ def compute_shap_topk(
     for i, f in enumerate(features):
         vals = arr[:, i]
         feat = xs[:, i].astype(np.float64)
-        corr = np.corrcoef(feat, vals)[0, 1] if np.std(feat) > 0 and np.std(vals) > 0 else float("nan")
+        corr = (
+            np.corrcoef(feat, vals)[0, 1]
+            if np.std(feat) > 0 and np.std(vals) > 0
+            else float("nan")
+        )
         rows.append(
             {
                 "feature": f,
                 "mean_abs_shap": float(np.mean(np.abs(vals))),
                 "corr_feature_shap": float(corr),
-                "direction_hint": "higher->higher risk" if np.isfinite(corr) and corr >= 0 else "higher->lower risk",
+                "direction_hint": "higher->higher risk"
+                if np.isfinite(corr) and corr >= 0
+                else "higher->lower risk",
                 "mechanism_tags": mechanism_tags(f),
             }
         )
-    return pd.DataFrame(rows).sort_values("mean_abs_shap", ascending=False).head(top_k).reset_index(drop=True)
+    return (
+        pd.DataFrame(rows)
+        .sort_values("mean_abs_shap", ascending=False)
+        .head(top_k)
+        .reset_index(drop=True)
+    )
 
 
 def compute_model_importance_topk(
@@ -478,7 +557,12 @@ def compute_model_importance_topk(
                 "mechanism_tags": mechanism_tags(f),
             }
         )
-    return pd.DataFrame(rows).sort_values("mean_abs_shap", ascending=False).head(top_k).reset_index(drop=True)
+    return (
+        pd.DataFrame(rows)
+        .sort_values("mean_abs_shap", ascending=False)
+        .head(top_k)
+        .reset_index(drop=True)
+    )
 
 
 def compute_disruption_reasons_per_shot(
@@ -504,7 +588,11 @@ def compute_disruption_reasons_per_shot(
     contrib_all = np.asarray(contrib_all, dtype=np.float64)
     feat_contrib = contrib_all[:, : len(features)]
 
-    warn_lookup = shot_summary.set_index("shot_id", drop=False) if not shot_summary.empty else pd.DataFrame()
+    warn_lookup = (
+        shot_summary.set_index("shot_id", drop=False)
+        if not shot_summary.empty
+        else pd.DataFrame()
+    )
     rows: List[Dict[str, Any]] = []
 
     for sid, g in timeline_df.groupby("shot_id", sort=True):
@@ -523,7 +611,9 @@ def compute_disruption_reasons_per_shot(
             window_rule = "tail_fallback"
 
         mean_contrib = feat_contrib[idx_use].mean(axis=0)
-        pos_order = [int(i) for i in np.argsort(-mean_contrib) if mean_contrib[int(i)] > 0]
+        pos_order = [
+            int(i) for i in np.argsort(-mean_contrib) if mean_contrib[int(i)] > 0
+        ]
         abs_order = [int(i) for i in np.argsort(-np.abs(mean_contrib))]
         chosen: List[int] = []
         for i in pos_order + abs_order:
@@ -573,9 +663,15 @@ def compute_disruption_reasons_per_shot(
         if not warn_lookup.empty and sid_int in warn_lookup.index:
             w = warn_lookup.loc[sid_int]
             row["warning"] = int(w["warning"])
-            row["lead_time_ms"] = float(w["lead_time_ms"]) if pd.notna(w["lead_time_ms"]) else float("nan")
+            row["lead_time_ms"] = (
+                float(w["lead_time_ms"])
+                if pd.notna(w["lead_time_ms"])
+                else float("nan")
+            )
             row["warning_time_to_end_ms"] = (
-                float(w["warning_time_to_end_ms"]) if pd.notna(w["warning_time_to_end_ms"]) else float("nan")
+                float(w["warning_time_to_end_ms"])
+                if pd.notna(w["warning_time_to_end_ms"])
+                else float("nan")
             )
         rows.append(row)
 
@@ -695,7 +791,9 @@ def write_markdown_report(path: Path, metrics: Dict[str, Any]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def update_progress(progress_path: Path, metrics: Dict[str, Any], artifacts: List[str]) -> None:
+def update_progress(
+    progress_path: Path, metrics: Dict[str, Any], artifacts: List[str]
+) -> None:
     if not progress_path.exists():
         return
     text = progress_path.read_text(encoding="utf-8")
@@ -783,7 +881,9 @@ def main() -> None:
     if not hdf5_root.exists():
         raise FileNotFoundError(f"HDF5 root not found: {hdf5_root}")
 
-    features_path = (repo_root / args.dataset_artifact_dir / "required_features.json").resolve()
+    features_path = (
+        repo_root / args.dataset_artifact_dir / "required_features.json"
+    ).resolve()
     features = list(json.loads(features_path.read_text(encoding="utf-8")))
     if len(features) != DEFAULT_REQUIRED_FEATURE_COUNT:
         raise RuntimeError(
@@ -796,18 +896,34 @@ def main() -> None:
         "selected_feature_count": int(len(features)),
     }
 
-    split_train = take_bounded(read_split_ids((repo_root / args.split_dir / "train.txt").resolve()), args.max_train_shots, args.seed)
-    split_val = take_bounded(read_split_ids((repo_root / args.split_dir / "val.txt").resolve()), args.max_val_shots, args.seed)
-    split_test = take_bounded(read_split_ids((repo_root / args.split_dir / "test.txt").resolve()), args.max_test_shots, args.seed)
+    split_train = take_bounded(
+        read_split_ids((repo_root / args.split_dir / "train.txt").resolve()),
+        args.max_train_shots,
+        args.seed,
+    )
+    split_val = take_bounded(
+        read_split_ids((repo_root / args.split_dir / "val.txt").resolve()),
+        args.max_val_shots,
+        args.seed,
+    )
+    split_test = take_bounded(
+        read_split_ids((repo_root / args.split_dir / "test.txt").resolve()),
+        args.max_test_shots,
+        args.seed,
+    )
 
-    label_map = load_label_map((repo_root / args.dataset_artifact_dir / "clean_shots.csv").resolve())
+    label_map = load_label_map(
+        (repo_root / args.dataset_artifact_dir / "clean_shots.csv").resolve()
+    )
     split_val_calib, split_val_thresh = split_val_for_calibration_and_threshold(
         shot_ids=split_val,
         label_map=label_map,
         calibration_fraction=float(args.calibration_shot_fraction),
         seed=int(args.seed),
     )
-    advanced_map = read_advanced_map((repo_root / "shot_list/J-TEXT/AdvancedTime_J-TEXT.json").resolve())
+    advanced_map = read_advanced_map(
+        (repo_root / "shot_list/J-TEXT/AdvancedTime_J-TEXT.json").resolve()
+    )
     hdf5_idx = build_hdf5_index(hdf5_root)
 
     train = load_split(
@@ -869,12 +985,16 @@ def main() -> None:
     lr_test_prob = lr_model.predict_proba(lr_scaler.transform(test.x))[:, 1]
 
     # Baseline 2: XGBoost gbtree
-    gbt_model = train_xgb(train.x, train.y, booster="gbtree", scale_pos_weight=scale_pos_weight, args=args)
+    gbt_model = train_xgb(
+        train.x, train.y, booster="gbtree", scale_pos_weight=scale_pos_weight, args=args
+    )
     gbt_val_prob = gbt_model.predict_proba(val_thresh.x)[:, 1]
     gbt_test_prob = gbt_model.predict_proba(test.x)[:, 1]
 
     # Primary baseline: XGBoost DART
-    dart_model = train_xgb(train.x, train.y, booster="dart", scale_pos_weight=scale_pos_weight, args=args)
+    dart_model = train_xgb(
+        train.x, train.y, booster="dart", scale_pos_weight=scale_pos_weight, args=args
+    )
     dart_val_calib_prob = dart_model.predict_proba(val_calib.x)[:, 1]
     dart_val_prob = dart_model.predict_proba(val_thresh.x)[:, 1]
     dart_test_prob = dart_model.predict_proba(test.x)[:, 1]
@@ -890,7 +1010,9 @@ def main() -> None:
         "xgb_dart": metrics_from_prob(test.y, dart_test_prob, 0.5),
     }
 
-    calibrator = ProbabilityCalibrator(method=args.calibration_method).fit(val_calib.y, dart_val_calib_prob)
+    calibrator = ProbabilityCalibrator(method=args.calibration_method).fit(
+        val_calib.y, dart_val_calib_prob
+    )
     val_prob_cal = calibrator.predict(dart_val_prob)
     test_prob_cal = calibrator.predict(dart_test_prob)
     cal_delta = calibration_quality_delta(val_thresh.y, dart_val_prob, val_prob_cal)
@@ -919,7 +1041,9 @@ def main() -> None:
     test_timeline["prob_cal"] = test_prob_cal
 
     # Real-time warning policy on test timeline.
-    shot_warn_test = apply_shot_warning_policy(test_timeline, threshold=float(theta), sustain_ms=float(args.sustain_ms))
+    shot_warn_test = apply_shot_warning_policy(
+        test_timeline, threshold=float(theta), sustain_ms=float(args.sustain_ms)
+    )
     shot_metrics_test = compute_shot_level_metrics(shot_warn_test)
     reason_df = compute_disruption_reasons_per_shot(
         model=dart_model,
@@ -940,13 +1064,19 @@ def main() -> None:
         n_bins=15,
     )
 
-    test_shot_ids = sorted(test_timeline["shot_id"].drop_duplicates().astype(int).tolist())
+    test_shot_ids = sorted(
+        test_timeline["shot_id"].drop_duplicates().astype(int).tolist()
+    )
     plot_limit = max(int(args.plot_shot_limit), 0)
     if args.plot_all_test_shots:
         selected_shots = test_shot_ids
     else:
         ranked_shots = (
-            shot_warn_test.sort_values(["shot_label", "shot_id"], ascending=[False, True])["shot_id"].astype(int).tolist()
+            shot_warn_test.sort_values(
+                ["shot_label", "shot_id"], ascending=[False, True]
+            )["shot_id"]
+            .astype(int)
+            .tolist()
         )
         if plot_limit > 0 and len(ranked_shots) < plot_limit:
             ranked_shots = test_shot_ids
@@ -954,7 +1084,7 @@ def main() -> None:
 
     timeline_plot_count = 0
     for sid in selected_shots:
-        g = test_timeline[test_timeline["shot_id"] == sid]
+        g = test_timeline[test_timeline["shot_id"] == sid].copy()
         if g.empty:
             continue
         save_probability_timeline_plot(
@@ -1009,13 +1139,25 @@ def main() -> None:
     # Persist artifacts.
     dart_model.save_model(str(output_dir / "model_xgb_dart.json"))
     calibrator.save(output_dir / "calibrator.joblib")
-    (output_dir / "feature_list.json").write_text(json.dumps(features, indent=2), encoding="utf-8")
+    (output_dir / "feature_list.json").write_text(
+        json.dumps(features, indent=2), encoding="utf-8"
+    )
 
-    feature_stats = pd.DataFrame({"feature": features, "mean": np.mean(train.x, axis=0), "std": np.std(train.x, axis=0)})
-    (output_dir / "normalization_stats.json").write_text(feature_stats.to_json(orient="records", indent=2), encoding="utf-8")
+    feature_stats = pd.DataFrame(
+        {
+            "feature": features,
+            "mean": np.mean(train.x, axis=0),
+            "std": np.std(train.x, axis=0),
+        }
+    )
+    (output_dir / "normalization_stats.json").write_text(
+        feature_stats.to_json(orient="records", indent=2), encoding="utf-8"
+    )
     shap_topk.to_csv(output_dir / "shap_topk.csv", index=False)
     shot_warn_test.to_csv(output_dir / "warning_summary_test.csv", index=False)
-    reason_df.to_csv(output_dir / "disruption_reason_per_shot.csv", index=False, encoding="utf-8")
+    reason_df.to_csv(
+        output_dir / "disruption_reason_per_shot.csv", index=False, encoding="utf-8"
+    )
     test_timeline.to_csv(plots_dir / "probability_timelines_test.csv", index=False)
 
     plotting_config = {
@@ -1065,7 +1207,11 @@ def main() -> None:
             "fallback_fls_ms": float(args.fallback_fls_ms),
             "fallback_dt_ms": float(args.fallback_dt_ms),
         },
-        "class_imbalance": {"train_pos_points": n_pos, "train_neg_points": n_neg, "scale_pos_weight": scale_pos_weight},
+        "class_imbalance": {
+            "train_pos_points": n_pos,
+            "train_neg_points": n_neg,
+            "scale_pos_weight": scale_pos_weight,
+        },
         "selected_model": "xgb_dart",
         "calibration": args.calibration_method,
         "threshold_policy": {
@@ -1090,7 +1236,9 @@ def main() -> None:
             "colsample_bytree": args.xgb_colsample_bytree,
         },
     }
-    (output_dir / "training_config.json").write_text(json.dumps(training_config, indent=2), encoding="utf-8")
+    (output_dir / "training_config.json").write_text(
+        json.dumps(training_config, indent=2), encoding="utf-8"
+    )
 
     metrics_summary: Dict[str, Any] = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -1135,14 +1283,16 @@ def main() -> None:
         },
         "shap_topk": shap_topk.to_dict(orient="records"),
     }
-    (output_dir / "metrics_summary.json").write_text(json.dumps(metrics_summary, indent=2), encoding="utf-8")
+    (output_dir / "metrics_summary.json").write_text(
+        json.dumps(metrics_summary, indent=2), encoding="utf-8"
+    )
 
     write_markdown_report(report_dir / "metrics.md", metrics_summary)
 
     artifacts_for_progress = [
         "src/models/train.py",
-        "src/models/eval.py",
-        "src/models/calibrate.py",
+        "src.evaluation.eval.py",
+        "src.evaluation.calibrate.py",
         to_repo_rel(output_dir / "model_xgb_dart.json", repo_root),
         to_repo_rel(output_dir / "calibrator.joblib", repo_root),
         to_repo_rel(output_dir / "training_config.json", repo_root),
@@ -1155,7 +1305,33 @@ def main() -> None:
         to_repo_rel(plots_dir / "probability_timelines_test.csv", repo_root),
         to_repo_rel(prob_plot_dir, repo_root),
     ]
-    update_progress(repo_root / "docs/progress.md", metrics_summary, artifacts_for_progress)
+    update_progress(
+        repo_root / "docs/progress.md", metrics_summary, artifacts_for_progress
+    )
+
+    # ---- Threshold stability analysis (industrial validation) ----
+    if args.run_stability and args.threshold_objective == "shot_fpr_constrained":
+        from src.evaluation.threshold_stability import run_stability_analysis
+
+        stability_dir = output_dir / "stability"
+        print("\n=== Running Threshold Stability Analysis ===")
+        stability_report = run_stability_analysis(
+            timeline_df=val_timeline,
+            theta_chosen=float(theta),
+            sustain_ms=float(args.sustain_ms),
+            max_shot_fpr=float(args.threshold_max_shot_fpr),
+            output_dir=stability_dir,
+            n_boot=int(args.stability_n_boot),
+            seed=int(args.seed),
+        )
+        metrics_summary["stability"] = stability_report.summary
+        # Re-save metrics with stability results
+        (output_dir / "metrics_summary.json").write_text(
+            json.dumps(metrics_summary, indent=2), encoding="utf-8"
+        )
+        print(f"\n=== Stability Verdict: {stability_report.verdict} ===")
+        for reason in stability_report.verdict_reasons:
+            print(f"  - {reason}")
 
     print(json.dumps(metrics_summary, indent=2))
 

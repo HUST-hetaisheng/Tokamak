@@ -19,24 +19,24 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 if __package__ is None or __package__ == "":
-    repo_root_for_imports = Path(__file__).resolve().parents[2]
+    repo_root_for_imports = Path(__file__).resolve().parents[3]
     if str(repo_root_for_imports) not in sys.path:
         sys.path.insert(0, str(repo_root_for_imports))
 
-from src.models import train as train_base
-from src.models.calibrate import ProbabilityCalibrator, calibration_quality_delta
-from src.models.eval import (
+from src.evaluation.calibrate import ProbabilityCalibrator, calibration_quality_delta
+from src.evaluation.eval import (
     apply_shot_warning_policy,
     choose_threshold_by_shot_fpr,
     compute_binary_metrics,
     compute_shot_level_metrics,
     save_probability_timeline_plot,
 )
-from src.models.sequence_arch import (
+from src.models.advanced.sequence_arch import (
     GRUClassifier,
     MambaLiteClassifier,
     TemporalTransformerClassifier,
 )
+from src.models.baseline import train_xgb as train_base
 
 
 DEFAULT_DATA_ROOT = Path("G:/我的云端硬盘/Fuison/data")
@@ -67,9 +67,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
     parser.add_argument("--hdf5-subdir", default="J-TEXT/unified_hdf5")
-    parser.add_argument("--dataset-artifact-dir", type=Path, default=Path("artifacts/datasets/jtext_v1"))
+    parser.add_argument(
+        "--dataset-artifact-dir", type=Path, default=Path("artifacts/datasets/jtext_v1")
+    )
     parser.add_argument("--split-dir", type=Path, default=Path("splits"))
-    parser.add_argument("--output-root", type=Path, default=Path("artifacts/models/iters"))
+    parser.add_argument(
+        "--output-root", type=Path, default=Path("artifacts/models/iters")
+    )
     parser.add_argument("--report-root", type=Path, default=Path("reports/iters"))
     parser.add_argument("--models", default="transformer_small,mamba_lite,gru")
     parser.add_argument("--seed", type=int, default=42)
@@ -82,6 +86,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-test-shots", type=int, default=0)
     parser.add_argument("--window-size", type=int, default=128)
     parser.add_argument("--stride", type=int, default=16)
+    parser.add_argument(
+        "--eval-stride",
+        type=int,
+        default=1,
+        help="Stride for val/test windowing (default 1 for maximum temporal resolution). "
+        "Training always uses --stride for efficiency.",
+    )
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--epochs", type=int, default=6)
     parser.add_argument("--patience", type=int, default=3)
@@ -90,7 +101,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--focal-gamma", type=float, default=0.0)
     parser.add_argument("--max-grad-norm", type=float, default=1.0)
-    parser.add_argument("--calibration-method", choices=["isotonic", "sigmoid"], default="isotonic")
+    parser.add_argument(
+        "--calibration-method",
+        choices=["isotonic", "isotonic_cv", "sigmoid"],
+        default="isotonic_cv",
+    )
     parser.add_argument("--calibration-shot-fraction", type=float, default=0.5)
     parser.add_argument("--threshold-max-shot-fpr", type=float, default=0.02)
     parser.add_argument("--sustain-ms", type=float, default=3.0)
@@ -100,6 +115,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--plot-all-test-shots", action="store_true", default=True)
     parser.add_argument("--plot-shot-limit", type=int, default=0)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
+    parser.add_argument(
+        "--run-stability",
+        action="store_true",
+        help="Run threshold stability analysis (bootstrap CI, LOO-CV, sensitivity)",
+    )
+    parser.add_argument(
+        "--stability-n-boot",
+        type=int,
+        default=2000,
+        help="Number of bootstrap iterations for stability analysis",
+    )
     return parser.parse_args()
 
 
@@ -237,32 +263,39 @@ def build_window_pack(
             short_shots.append(int(sid))
             if not pad_short_shots or n <= 0:
                 continue
-            end = n - 1
-            x_raw = shot.x[: n].astype(np.float32)
-            pad_len = int(window_size - x_raw.shape[0])
-            if pad_len > 0:
-                if short_pad_mode == "edge" and x_raw.shape[0] > 0:
-                    pad = np.repeat(x_raw[:1], repeats=pad_len, axis=0)
+            # Generate sub-windows at every stride step for temporal resolution.
+            # Each sub-window ends at a different data index, with appropriate
+            # left-padding to fill the window to window_size.
+            end_idx = list(range(0, n, stride))
+            if end_idx[-1] != n - 1:
+                end_idx.append(n - 1)
+            for end in end_idx:
+                x_raw = shot.x[: end + 1].astype(np.float32)
+                pad_len = int(window_size - x_raw.shape[0])
+                if pad_len > 0:
+                    if short_pad_mode == "edge" and x_raw.shape[0] > 0:
+                        pad = np.repeat(x_raw[:1], repeats=pad_len, axis=0)
+                    else:
+                        pad = np.zeros((pad_len, x_raw.shape[1]), dtype=np.float32)
+                    xw = np.concatenate([pad, x_raw], axis=0).astype(np.float32)
                 else:
-                    pad = np.zeros((pad_len, x_raw.shape[1]), dtype=np.float32)
-                xw = np.concatenate([pad, x_raw], axis=0).astype(np.float32)
-            else:
-                xw = x_raw[-window_size:]
-            y_end = int(shot.y[end])
-            x_rows.append(xw)
-            y_rows.append(y_end)
-            timeline_rows.append(
-                {
-                    "split": split_name,
-                    "shot_id": int(sid),
-                    "time_ms": float(shot.time_ms[end]),
-                    "time_to_end_ms": float(shot.time_to_end_ms[end]),
-                    "y_true": y_end,
-                    "window_start_idx": 0,
-                    "window_end_idx": int(end),
-                    "pad_left_len": int(max(pad_len, 0)),
-                }
-            )
+                    xw = x_raw[-window_size:]
+                    pad_len = 0
+                y_end = int(shot.y[end])
+                x_rows.append(xw)
+                y_rows.append(y_end)
+                timeline_rows.append(
+                    {
+                        "split": split_name,
+                        "shot_id": int(sid),
+                        "time_ms": float(shot.time_ms[end]),
+                        "time_to_end_ms": float(shot.time_to_end_ms[end]),
+                        "y_true": y_end,
+                        "window_start_idx": 0,
+                        "window_end_idx": int(end),
+                        "pad_left_len": int(max(pad_len, 0)),
+                    }
+                )
             continue
         end_idx = list(range(window_size - 1, n, stride))
         if end_idx[-1] != n - 1:
@@ -400,7 +433,9 @@ def compute_gradient_input_attribution(
             xb = torch.from_numpy(x[i:j]).to(device)
             xb.requires_grad_(True)
             logits = model(xb)
-            grads = torch.autograd.grad(outputs=logits.sum(), inputs=xb, create_graph=False, retain_graph=False)[0]
+            grads = torch.autograd.grad(
+                outputs=logits.sum(), inputs=xb, create_graph=False, retain_graph=False
+            )[0]
             contrib = (grads * xb).mean(dim=1)
             out[i:j] = contrib.detach().cpu().numpy().astype(np.float64)
     if not prev_mode:
@@ -459,15 +494,21 @@ def train_one_model(
             )
             loss.backward()
             if max_grad_norm > 0:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), max_norm=max_grad_norm
+                )
             optimizer.step()
             running_loss += float(loss.item()) * int(xb.shape[0])
             seen += int(xb.shape[0])
 
-        val_logits = predict_logits(model=model, x=val_x, batch_size=batch_size, device=device)
+        val_logits = predict_logits(
+            model=model, x=val_x, batch_size=batch_size, device=device
+        )
         val_prob = sigmoid_np(val_logits)
         try:
-            val_auc = float(compute_binary_metrics(val_y, val_prob, threshold=0.5)["roc_auc"])
+            val_auc = float(
+                compute_binary_metrics(val_y, val_prob, threshold=0.5)["roc_auc"]
+            )
         except Exception:
             val_auc = float("nan")
 
@@ -503,7 +544,11 @@ def compute_disruption_reasons_per_shot(
         raise RuntimeError(
             f"Attribution/timeline mismatch: attr={contrib_by_window.shape[0]}, timeline={len(timeline_df)}"
         )
-    warn_lookup = shot_summary.set_index("shot_id", drop=False) if not shot_summary.empty else pd.DataFrame()
+    warn_lookup = (
+        shot_summary.set_index("shot_id", drop=False)
+        if not shot_summary.empty
+        else pd.DataFrame()
+    )
     rows: List[Dict[str, Any]] = []
     kk = max(int(top_k), 1)
 
@@ -522,7 +567,9 @@ def compute_disruption_reasons_per_shot(
             window_rule = "tail_fallback"
 
         mean_contrib = contrib_by_window[idx_use].mean(axis=0)
-        pos_order = [int(i) for i in np.argsort(-mean_contrib) if mean_contrib[int(i)] > 0]
+        pos_order = [
+            int(i) for i in np.argsort(-mean_contrib) if mean_contrib[int(i)] > 0
+        ]
         abs_order = [int(i) for i in np.argsort(-np.abs(mean_contrib))]
         chosen: List[int] = []
         for i in pos_order + abs_order:
@@ -571,9 +618,15 @@ def compute_disruption_reasons_per_shot(
         if not warn_lookup.empty and sid_int in warn_lookup.index:
             w = warn_lookup.loc[sid_int]
             row["warning"] = int(w["warning"])
-            row["lead_time_ms"] = float(w["lead_time_ms"]) if pd.notna(w["lead_time_ms"]) else float("nan")
+            row["lead_time_ms"] = (
+                float(w["lead_time_ms"])
+                if pd.notna(w["lead_time_ms"])
+                else float("nan")
+            )
             row["warning_time_to_end_ms"] = (
-                float(w["warning_time_to_end_ms"]) if pd.notna(w["warning_time_to_end_ms"]) else float("nan")
+                float(w["warning_time_to_end_ms"])
+                if pd.notna(w["warning_time_to_end_ms"])
+                else float("nan")
             )
         rows.append(row)
 
@@ -634,11 +687,14 @@ def write_metrics_markdown(path: Path, metrics: Dict[str, Any]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def write_advanced_summary(summary_rows: List[Dict[str, Any]], summary_csv: Path, summary_md: Path) -> None:
+def write_advanced_summary(
+    summary_rows: List[Dict[str, Any]], summary_csv: Path, summary_md: Path
+) -> None:
     df = pd.DataFrame(summary_rows)
-    df = df.sort_values(["shot_accuracy", "test_roc_auc", "test_accuracy"], ascending=[False, False, False]).reset_index(
-        drop=True
-    )
+    df = df.sort_values(
+        ["shot_accuracy", "test_roc_auc", "test_accuracy"],
+        ascending=[False, False, False],
+    ).reset_index(drop=True)
     summary_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(summary_csv, index=False)
 
@@ -680,7 +736,7 @@ def update_progress_agent6(
         marker,
         "Status: completed",
         "Done:",
-        "- Added `src/models/sequence_arch.py` with `TemporalTransformerClassifier`, `MambaLiteClassifier`, and `GRUClassifier`.",
+        "- Added `src.models.advanced.sequence_arch.py` with `TemporalTransformerClassifier`, `MambaLiteClassifier`, and `GRUClassifier`.",
         "- Added `src/models/train_advanced.py` with bounded advanced training sweep, calibration, shot-level thresholding, probability-timeline export, and gradient*input reasons.",
         f"- Executed 3 fair-window runs (`window_size={int(best_row['window_size'])}`, `stride={int(best_row['stride'])}`): transformer_small / mamba_lite / gru.",
         f"- Best run: `{best_row['run_name']}` with test_acc={float(best_row['test_accuracy']):.6f}, roc_auc={float(best_row['test_roc_auc']):.6f}, shot_acc={float(best_row['shot_accuracy']):.6f}, shot_fpr={float(best_row['shot_fpr']):.6f}.",
@@ -718,7 +774,9 @@ def main() -> None:
     if not hdf5_root.exists():
         raise FileNotFoundError(f"HDF5 root not found: {hdf5_root}")
 
-    features_path = (repo_root / args.dataset_artifact_dir / "required_features.json").resolve()
+    features_path = (
+        repo_root / args.dataset_artifact_dir / "required_features.json"
+    ).resolve()
     features = load_features(features_path)
     input_dim = int(len(features))
 
@@ -738,14 +796,18 @@ def main() -> None:
         int(args.seed),
     )
 
-    label_map = train_base.load_label_map((repo_root / args.dataset_artifact_dir / "clean_shots.csv").resolve())
+    label_map = train_base.load_label_map(
+        (repo_root / args.dataset_artifact_dir / "clean_shots.csv").resolve()
+    )
     val_calib_ids, val_thresh_ids = train_base.split_val_for_calibration_and_threshold(
         shot_ids=val_ids,
         label_map=label_map,
         calibration_fraction=float(args.calibration_shot_fraction),
         seed=int(args.seed),
     )
-    advanced_map = train_base.read_advanced_map((repo_root / "shot_list/J-TEXT/AdvancedTime_J-TEXT.json").resolve())
+    advanced_map = train_base.read_advanced_map(
+        (repo_root / "shot_list/J-TEXT/AdvancedTime_J-TEXT.json").resolve()
+    )
     hdf5_idx = train_base.build_hdf5_index(hdf5_root)
 
     train_shots, train_meta = load_split_data(
@@ -805,11 +867,12 @@ def main() -> None:
         pad_short_shots=bool(args.pad_short_shots),
         short_pad_mode=str(args.short_pad_mode),
     )
+    eval_stride = int(args.eval_stride)
     val_calib_pack = build_window_pack(
         split_name="val_calib",
         shots=val_calib_shots,
         window_size=int(args.window_size),
-        stride=int(args.stride),
+        stride=eval_stride,
         pad_short_shots=bool(args.pad_short_shots),
         short_pad_mode=str(args.short_pad_mode),
     )
@@ -817,7 +880,7 @@ def main() -> None:
         split_name="val_thresh",
         shots=val_thresh_shots,
         window_size=int(args.window_size),
-        stride=int(args.stride),
+        stride=eval_stride,
         pad_short_shots=bool(args.pad_short_shots),
         short_pad_mode=str(args.short_pad_mode),
     )
@@ -825,7 +888,7 @@ def main() -> None:
         split_name="test",
         shots=test_shots,
         window_size=int(args.window_size),
-        stride=int(args.stride),
+        stride=eval_stride,
         pad_short_shots=bool(args.pad_short_shots),
         short_pad_mode=str(args.short_pad_mode),
     )
@@ -839,7 +902,7 @@ def main() -> None:
     models = [m.strip() for m in str(args.models).split(",") if m.strip()]
     summary_rows: List[Dict[str, Any]] = []
     artifact_paths_for_progress: List[str] = [
-        "src/models/sequence_arch.py",
+        "src.models.advanced.sequence_arch.py",
         "src/models/train_advanced.py",
     ]
 
@@ -854,7 +917,9 @@ def main() -> None:
         plots_dir.mkdir(parents=True, exist_ok=True)
         prob_plot_dir.mkdir(parents=True, exist_ok=True)
 
-        model = build_model(model_name=model_name, input_dim=input_dim, dropout=float(args.dropout))
+        model = build_model(
+            model_name=model_name, input_dim=input_dim, dropout=float(args.dropout)
+        )
         model, history, best_auc, best_epoch = train_one_model(
             model=model,
             train_x=train_x,
@@ -871,9 +936,15 @@ def main() -> None:
             device=device,
         )
 
-        val_calib_logit = predict_logits(model=model, x=val_calib_x, batch_size=int(args.batch_size), device=device)
-        val_thresh_logit = predict_logits(model=model, x=val_thresh_x, batch_size=int(args.batch_size), device=device)
-        test_logit = predict_logits(model=model, x=test_x, batch_size=int(args.batch_size), device=device)
+        val_calib_logit = predict_logits(
+            model=model, x=val_calib_x, batch_size=int(args.batch_size), device=device
+        )
+        val_thresh_logit = predict_logits(
+            model=model, x=val_thresh_x, batch_size=int(args.batch_size), device=device
+        )
+        test_logit = predict_logits(
+            model=model, x=test_x, batch_size=int(args.batch_size), device=device
+        )
         val_calib_prob_raw = sigmoid_np(val_calib_logit)
         val_thresh_prob_raw = sigmoid_np(val_thresh_logit)
         test_prob_raw = sigmoid_np(test_logit)
@@ -936,7 +1007,9 @@ def main() -> None:
             top_k=int(args.reason_top_k),
         )
 
-        test_shot_ids = sorted(test_timeline["shot_id"].drop_duplicates().astype(int).tolist())
+        test_shot_ids = sorted(
+            test_timeline["shot_id"].drop_duplicates().astype(int).tolist()
+        )
         if bool(args.plot_all_test_shots):
             selected_shots = test_shot_ids
         else:
@@ -944,7 +1017,7 @@ def main() -> None:
             selected_shots = test_shot_ids[:limit] if limit > 0 else []
         timeline_plot_count = 0
         for sid in selected_shots:
-            g = test_timeline[test_timeline["shot_id"] == sid]
+            g = test_timeline[test_timeline["shot_id"] == sid].copy()
             if g.empty:
                 continue
             save_probability_timeline_plot(
@@ -966,7 +1039,11 @@ def main() -> None:
             "hdf5_root": str(hdf5_root),
             "features": features,
             "feature_count": int(len(features)),
-            "window": {"window_size": int(args.window_size), "stride": int(args.stride)},
+            "window": {
+                "window_size": int(args.window_size),
+                "stride": int(args.stride),
+                "eval_stride": eval_stride,
+            },
             "optimizer": {
                 "epochs": int(args.epochs),
                 "patience": int(args.patience),
@@ -1032,6 +1109,7 @@ def main() -> None:
             "model_name": model_name,
             "window_size": int(args.window_size),
             "stride": int(args.stride),
+            "eval_stride": eval_stride,
             "val_timepoint_calibrated": val_metrics_cal,
             "test_timepoint_calibrated": test_metrics_cal,
             "test_shot_policy": shot_metrics_test,
@@ -1056,20 +1134,79 @@ def main() -> None:
             },
         }
 
-        (output_dir / "training_config.json").write_text(json.dumps(training_config, indent=2), encoding="utf-8")
-        (output_dir / "metrics_summary.json").write_text(json.dumps(metrics_summary, indent=2), encoding="utf-8")
+        (output_dir / "training_config.json").write_text(
+            json.dumps(training_config, indent=2), encoding="utf-8"
+        )
+        (output_dir / "metrics_summary.json").write_text(
+            json.dumps(metrics_summary, indent=2), encoding="utf-8"
+        )
+
+        # Save PyTorch model checkpoint
+        checkpoint_path = output_dir / f"{model_name}_best.pt"
+        torch.save(
+            {
+                "model_state_dict": model.state_dict(),
+                "model_name": model_name,
+                "input_dim": input_dim,
+                "dropout": float(args.dropout),
+                "best_epoch": int(best_epoch),
+                "best_val_roc_auc_raw": float(best_auc)
+                if np.isfinite(best_auc)
+                else None,
+                "normalization": {
+                    "feature_mean": norm_mu.tolist(),
+                    "feature_std": norm_std.tolist(),
+                },
+            },
+            checkpoint_path,
+        )
+
         shot_warn_test.to_csv(output_dir / "warning_summary_test.csv", index=False)
-        reason_df.to_csv(output_dir / "disruption_reason_per_shot.csv", index=False, encoding="utf-8")
+        reason_df.to_csv(
+            output_dir / "disruption_reason_per_shot.csv", index=False, encoding="utf-8"
+        )
         write_metrics_markdown(report_dir / "metrics.md", metrics_summary)
+
+        # ---- Threshold stability analysis (industrial validation) ----
+        if args.run_stability:
+            from src.evaluation.threshold_stability import run_stability_analysis
+
+            stability_dir = output_dir / "stability"
+            print(f"\n=== [{model_name}] Running Threshold Stability Analysis ===")
+            stability_report = run_stability_analysis(
+                timeline_df=val_timeline,
+                theta_chosen=float(theta),
+                sustain_ms=float(args.sustain_ms),
+                max_shot_fpr=float(args.threshold_max_shot_fpr),
+                output_dir=stability_dir,
+                n_boot=int(args.stability_n_boot),
+                seed=int(args.seed),
+            )
+            metrics_summary["stability"] = stability_report.summary
+            # Re-save metrics with stability results
+            (output_dir / "metrics_summary.json").write_text(
+                json.dumps(metrics_summary, indent=2), encoding="utf-8"
+            )
+            print(
+                f"\n=== [{model_name}] Stability Verdict: {stability_report.verdict} ==="
+            )
+            for reason in stability_report.verdict_reasons:
+                print(f"  - {reason}")
 
         artifact_paths_for_progress.extend(
             [
                 train_base.to_repo_rel(output_dir / "training_config.json", repo_root),
                 train_base.to_repo_rel(output_dir / "metrics_summary.json", repo_root),
-                train_base.to_repo_rel(output_dir / "warning_summary_test.csv", repo_root),
-                train_base.to_repo_rel(output_dir / "disruption_reason_per_shot.csv", repo_root),
+                train_base.to_repo_rel(
+                    output_dir / "warning_summary_test.csv", repo_root
+                ),
+                train_base.to_repo_rel(
+                    output_dir / "disruption_reason_per_shot.csv", repo_root
+                ),
                 train_base.to_repo_rel(report_dir / "metrics.md", repo_root),
-                train_base.to_repo_rel(plots_dir / "probability_timelines_test.csv", repo_root),
+                train_base.to_repo_rel(
+                    plots_dir / "probability_timelines_test.csv", repo_root
+                ),
                 train_base.to_repo_rel(prob_plot_dir, repo_root),
             ]
         )

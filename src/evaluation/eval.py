@@ -24,7 +24,10 @@ if __package__ is None or __package__ == "":
     if str(repo_root_for_imports) not in sys.path:
         sys.path.insert(0, str(repo_root_for_imports))
 
-from src.models.calibrate import calibration_curve_points, expected_calibration_error
+from src.evaluation.calibrate import (
+    calibration_curve_points,
+    expected_calibration_error,
+)
 
 
 def compute_binary_metrics(
@@ -107,7 +110,11 @@ def choose_threshold_by_accuracy(
             better = True
         elif abs(acc - best_acc) <= eps and tpr > best_tpr + eps:
             better = True
-        elif abs(acc - best_acc) <= eps and abs(tpr - best_tpr) <= eps and fpr < best_fpr - eps:
+        elif (
+            abs(acc - best_acc) <= eps
+            and abs(tpr - best_tpr) <= eps
+            and fpr < best_fpr - eps
+        ):
             better = True
         if better:
             best_acc = acc
@@ -137,7 +144,9 @@ def choose_threshold_by_shot_fpr(
     feasible_count = 0
 
     for thr in np.linspace(min_threshold, max_threshold, num_steps):
-        summary = apply_shot_warning_policy(timeline_df=timeline_df, threshold=float(thr), sustain_ms=float(sustain_ms))
+        summary = apply_shot_warning_policy(
+            timeline_df=timeline_df, threshold=float(thr), sustain_ms=float(sustain_ms)
+        )
         sm = compute_shot_level_metrics(summary)
         shot_tpr = float(sm.get("shot_tpr", float("nan")))
         shot_fpr = float(sm.get("shot_fpr", float("nan")))
@@ -167,7 +176,10 @@ def choose_threshold_by_shot_fpr(
             better_fallback = False
             if cur["shot_fpr"] < best_fallback["shot_fpr"] - eps:
                 better_fallback = True
-            elif abs(cur["shot_fpr"] - best_fallback["shot_fpr"]) <= eps and cur["shot_tpr"] > best_fallback["shot_tpr"] + eps:
+            elif (
+                abs(cur["shot_fpr"] - best_fallback["shot_fpr"]) <= eps
+                and cur["shot_tpr"] > best_fallback["shot_tpr"] + eps
+            ):
                 better_fallback = True
             elif (
                 abs(cur["shot_fpr"] - best_fallback["shot_fpr"]) <= eps
@@ -189,18 +201,31 @@ def choose_threshold_by_shot_fpr(
                 better_feasible = False
                 if cur["shot_tpr"] > best_feasible["shot_tpr"] + eps:
                     better_feasible = True
-                elif abs(cur["shot_tpr"] - best_feasible["shot_tpr"]) <= eps and cur["lead_time_ms_median"] > best_feasible["lead_time_ms_median"] + eps:
+                elif (
+                    abs(cur["shot_tpr"] - best_feasible["shot_tpr"]) <= eps
+                    and cur["lead_time_ms_median"]
+                    > best_feasible["lead_time_ms_median"] + eps
+                ):
                     better_feasible = True
                 elif (
                     abs(cur["shot_tpr"] - best_feasible["shot_tpr"]) <= eps
-                    and abs(cur["lead_time_ms_median"] - best_feasible["lead_time_ms_median"]) <= eps
+                    and abs(
+                        cur["lead_time_ms_median"]
+                        - best_feasible["lead_time_ms_median"]
+                    )
+                    <= eps
                     and cur["shot_accuracy"] > best_feasible["shot_accuracy"] + eps
                 ):
                     better_feasible = True
                 elif (
                     abs(cur["shot_tpr"] - best_feasible["shot_tpr"]) <= eps
-                    and abs(cur["lead_time_ms_median"] - best_feasible["lead_time_ms_median"]) <= eps
-                    and abs(cur["shot_accuracy"] - best_feasible["shot_accuracy"]) <= eps
+                    and abs(
+                        cur["lead_time_ms_median"]
+                        - best_feasible["lead_time_ms_median"]
+                    )
+                    <= eps
+                    and abs(cur["shot_accuracy"] - best_feasible["shot_accuracy"])
+                    <= eps
                     and cur["shot_fpr"] < best_feasible["shot_fpr"] - eps
                 ):
                     better_feasible = True
@@ -293,7 +318,9 @@ def compute_shot_level_metrics(summary_df: pd.DataFrame) -> Dict[str, float]:
     tn, fp, fn, tp = confusion_matrix(y, pred, labels=[0, 1]).ravel()
     tpr = float(tp / (tp + fn)) if (tp + fn) > 0 else float("nan")
     fpr = float(fp / (fp + tn)) if (fp + tn) > 0 else float("nan")
-    disruptive_warned = summary_df.loc[(summary_df["shot_label"] == 1) & (summary_df["warning"] == 1)]
+    disruptive_warned = summary_df.loc[
+        (summary_df["shot_label"] == 1) & (summary_df["warning"] == 1)
+    ]
     return {
         "shot_accuracy": float(np.mean(y == pred)),
         "shot_tpr": tpr,
@@ -354,7 +381,9 @@ def save_calibration_curve_plot(
     x_cal, y_cal = _xy(cal_rows)
 
     fig, ax = plt.subplots(figsize=(5.2, 4.0), dpi=140)
-    ax.plot([0, 1], [0, 1], linestyle="--", color="#555555", linewidth=1.2, label="Perfect")
+    ax.plot(
+        [0, 1], [0, 1], linestyle="--", color="#555555", linewidth=1.2, label="Perfect"
+    )
     if len(x_raw) > 0:
         ax.plot(x_raw, y_raw, marker="o", color="#d62728", label="Raw")
     if len(x_cal) > 0:
@@ -393,7 +422,13 @@ def save_probability_timeline_plot(
 
     fig, ax1 = plt.subplots(figsize=(7.2, 3.6), dpi=140)
     ax1.plot(time_ms, probs, color="#0b5394", linewidth=1.8, label="P(disruption|t)")
-    ax1.axhline(threshold, color="#cc0000", linestyle="--", linewidth=1.2, label=f"theta={threshold:.3f}")
+    ax1.axhline(
+        threshold,
+        color="#cc0000",
+        linestyle="--",
+        linewidth=1.2,
+        label=f"theta={threshold:.3f}",
+    )
     ax1.set_xlabel("Time to end (ms)")
     ax1.set_ylabel("Probability")
     ax1.set_ylim(-0.02, 1.02)
@@ -401,7 +436,9 @@ def save_probability_timeline_plot(
     if warn and idx >= 0:
         xw = float(time_ms[idx])
         yw = float(probs[idx])
-        ax1.scatter([xw], [yw], color="#cc0000", s=30, zorder=5, label="Warning trigger")
+        ax1.scatter(
+            [xw], [yw], color="#cc0000", s=30, zorder=5, label="Warning trigger"
+        )
     ax2 = ax1.twinx()
     ax2.plot(time_ms, y, color="#6a329f", alpha=0.45, linewidth=1.2, label="y(t)")
     ax2.set_ylabel("Label")
@@ -418,7 +455,9 @@ def save_probability_timeline_plot(
     out = {
         "warning": int(warn),
         "warning_index": int(idx),
-        "warning_time_to_end_ms": float(time_ms[idx]) if warn and idx >= 0 else float("nan"),
+        "warning_time_to_end_ms": float(time_ms[idx])
+        if warn and idx >= 0
+        else float("nan"),
     }
     return out
 
